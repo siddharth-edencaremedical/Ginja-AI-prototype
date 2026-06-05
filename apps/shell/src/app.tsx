@@ -12,6 +12,7 @@ import {
   CardTitle,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -49,6 +50,7 @@ import { loadRemote, registerRemotes } from "@module-federation/runtime-tools";
 import {
   ArrowUpRightIcon,
   BoxesIcon,
+  ChevronDownIcon,
   ClipboardCheckIcon,
   HomeIcon,
   LogOutIcon,
@@ -231,6 +233,10 @@ function ShellLayout() {
       ...remoteNavigation
     ];
   }, [flags, remoteStates, session.user]);
+  const topbarTitle = useMemo(
+    () => getTopbarTitle(visibleNavigation, location.pathname),
+    [location.pathname, visibleNavigation]
+  );
 
   return (
     <>
@@ -238,7 +244,7 @@ function ShellLayout() {
         <SidebarHeader className="p-0">
           <div
             className={cn(
-              "flex h-14 items-center",
+              "flex h-16 items-center",
               isSidebarCollapsed ? "justify-center px-0" : "px-4"
             )}
           >
@@ -293,45 +299,57 @@ function ShellLayout() {
         <SidebarRail />
       </Sidebar>
       <SidebarInset>
-        <header className="flex min-h-14 items-center justify-between gap-3 border-b bg-background px-4 max-[760px]:flex-col max-[760px]:items-stretch max-[760px]:py-3 md:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <SidebarTrigger />
+        <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b bg-background px-4 py-2 md:flex-nowrap md:px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <SidebarTrigger className="shrink-0" />
             <Separator orientation="vertical" className="h-5 max-[760px]:hidden" />
-            <div className="min-w-0">
-              <p className="m-0 text-xs font-medium text-muted-foreground">
-                Operations
-              </p>
-              <h1 className="m-0 truncate text-base font-semibold">
-                Work overview
-              </h1>
-            </div>
+            <h1 className="m-0 min-w-0 truncate text-lg font-semibold">
+              {topbarTitle}
+            </h1>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="min-w-0">
-                <Avatar size="sm">
-                  <AvatarFallback>{getInitials(session.user.name)}</AvatarFallback>
-                </Avatar>
-                <span className="truncate">{session.user.name}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                <strong>{session.user.name}</strong>
-                <span>{session.user.email}</span>
-                <span>{session.tenant.name}</span>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  void logout();
-                }}
-              >
-                <LogOutIcon />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex min-w-0 shrink-0 items-center justify-end max-[520px]:w-full max-[520px]:justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  aria-label="Open account menu"
+                  variant="ghost"
+                  className="h-10 min-w-0 justify-start gap-2 px-2 data-[state=open]:bg-muted"
+                >
+                  <Avatar size="sm">
+                    <AvatarFallback>{getInitials(session.user.name)}</AvatarFallback>
+                  </Avatar>
+                  <span className="hidden max-w-36 truncate text-left sm:block">
+                    {session.user.name}
+                  </span>
+                  <ChevronDownIcon data-icon="inline-end" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuLabel className="flex items-start gap-3 px-3 py-3">
+                  <Avatar size="lg">
+                    <AvatarFallback>{getInitials(session.user.name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex flex-col gap-1">
+                    <strong className="truncate text-sm font-semibold text-foreground">
+                      {session.user.name}
+                    </strong>
+                    <span className="truncate text-xs">{session.user.email}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void logout();
+                    }}
+                  >
+                    <LogOutIcon />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
         <main className="min-w-0 flex-1 p-4 md:p-6">
           <Routes>
@@ -744,6 +762,52 @@ class RemoteErrorBoundary extends Component<
 
     return this.props.children;
   }
+}
+
+function getTopbarTitle(
+  items: ShellNavigationItem[],
+  pathname: string
+): string {
+  const activeItem = items.reduce<ShellNavigationItem | undefined>(
+    (currentMatch, item) => {
+      if (!isPathWithinBase(pathname, item.path)) {
+        return currentMatch;
+      }
+
+      if (!currentMatch || item.path.length > currentMatch.path.length) {
+        return item;
+      }
+
+      return currentMatch;
+    },
+    undefined
+  );
+
+  if (activeItem?.id === "home") {
+    return "Work overview";
+  }
+
+  const matchingRemote = remoteRegistry.find((registration) =>
+    isPathWithinBase(pathname, registration.routeBasePath)
+  );
+
+  if (matchingRemote) {
+    return activeItem?.label ?? matchingRemote.displayName;
+  }
+
+  if (activeItem) {
+    return activeItem.label;
+  }
+
+  return "Work overview";
+}
+
+function isPathWithinBase(pathname: string, basePath: string): boolean {
+  if (basePath === "/") {
+    return pathname === "/";
+  }
+
+  return pathname === basePath || pathname.startsWith(`${basePath}/`);
 }
 
 function getWorkAreaDescription(path: string): string {
