@@ -1,0 +1,36 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "product-config",
+  "projectType": "application",
+  "sourceRoot": "apps/product-config/src",
+  "tags": ["type:vertical", "scope:product-config"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/product-config"],
+      "options": {
+        "cwd": "apps/product-config",
+        "command": "rsbuild build"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/product-config",
+        "command": "rsbuild dev"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/product-config/tsconfig.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"apps/product-config/**/*.{ts,tsx,js,jsx}\""
+      }
+    }
+  }
+}

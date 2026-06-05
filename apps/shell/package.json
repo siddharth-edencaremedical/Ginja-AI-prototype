@@ -1,0 +1,17 @@
+{
+  "name": "@ginja/shell",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ginja/auth": "workspace:*",
+    "@ginja/design-system": "workspace:*",
+    "@ginja/feature-flags": "workspace:*",
+    "@ginja/logging": "workspace:*",
+    "@ginja/permissions": "workspace:*",
+    "@ginja/shared-types": "workspace:*",
+    "lucide-react": "^1.17.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.0"
+  }
+}

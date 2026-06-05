@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "feature-flags",
+  "projectType": "library",
+  "sourceRoot": "packages/feature-flags/src",
+  "tags": ["type:platform", "scope:feature-flags"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/packages/feature-flags"],
+      "options": {
+        "command": "tsc -p packages/feature-flags/tsconfig.lib.json"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/feature-flags/tsconfig.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"packages/feature-flags/**/*.{ts,tsx,js,jsx}\""
+      }
+    }
+  }
+}

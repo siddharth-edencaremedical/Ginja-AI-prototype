@@ -1,0 +1,36 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "shell",
+  "projectType": "application",
+  "sourceRoot": "apps/shell/src",
+  "tags": ["type:app-shell", "scope:shell"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/shell"],
+      "options": {
+        "cwd": "apps/shell",
+        "command": "rsbuild build"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/shell",
+        "command": "rsbuild dev"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/shell/tsconfig.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"apps/shell/**/*.{ts,tsx,js,jsx}\""
+      }
+    }
+  }
+}

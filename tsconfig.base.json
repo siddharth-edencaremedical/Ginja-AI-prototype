@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ginja/api-client": ["packages/api-client/src/index.ts"],
+      "@ginja/auth": ["packages/auth/src/index.ts"],
+      "@ginja/design-system": ["packages/design-system/src/index.ts"],
+      "@ginja/design-system/components/*": [
+        "packages/design-system/src/components/*"
+      ],
+      "@ginja/design-system/hooks/*": ["packages/design-system/src/hooks/*"],
+      "@ginja/design-system/lib/*": ["packages/design-system/src/lib/*"],
+      "@ginja/design-system/assets": [
+        "packages/design-system/src/assets/index.ts"
+      ],
+      "@ginja/design-system/assets/logo": [
+        "packages/design-system/src/assets/logo.ts"
+      ],
+      "@ginja/design-system/assets/logo-mark": [
+        "packages/design-system/src/assets/logo-mark.ts"
+      ],
+      "@ginja/design-system/styles.css": [
+        "packages/design-system/src/styles/globals.css"
+      ],
+      "@ginja/feature-flags": ["packages/feature-flags/src/index.ts"],
+      "@ginja/logging": ["packages/logging/src/index.ts"],
+      "@ginja/permissions": ["packages/permissions/src/index.ts"],
+      "@ginja/shared-types": ["packages/shared-types/src/index.ts"]
+    }
+  }
+}

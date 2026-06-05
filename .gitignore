@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.nx/
+coverage/
+.DS_Store
+*.log
+.env.local
+
+# Claude Code local/runtime state
+.claude/scheduled_tasks.lock
+.claude/settings.local.json

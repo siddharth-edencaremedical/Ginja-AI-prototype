@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "permissions",
+  "projectType": "library",
+  "sourceRoot": "packages/permissions/src",
+  "tags": ["type:platform", "scope:permissions"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/packages/permissions"],
+      "options": {
+        "command": "tsc -p packages/permissions/tsconfig.lib.json"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/permissions/tsconfig.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"packages/permissions/**/*.{ts,tsx,js,jsx}\""
+      }
+    }
+  }
+}

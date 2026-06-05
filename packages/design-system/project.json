@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "design-system",
+  "projectType": "library",
+  "sourceRoot": "packages/design-system/src",
+  "tags": ["type:platform", "scope:design-system"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/packages/design-system"],
+      "options": {
+        "command": "tsc -p packages/design-system/tsconfig.lib.json && cp packages/design-system/src/assets/*.png dist/packages/design-system/assets/"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/design-system/tsconfig.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"packages/design-system/**/*.{ts,tsx,js,jsx}\""
+      }
+    }
+  }
+}

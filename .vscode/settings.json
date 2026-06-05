@@ -1,0 +1,23 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.gitignore": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/node_modules": true,
+    "**/.DS_Store": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.egg-info": true,
+    "**/venv": true,
+    "**/.venv": true,
+    "**/env": true,
+    ".pnpm-store": true,
+    ".nx": true,
+    "eslint.config.mjs": true,
+    "nx.json": true,
+    "tsconfig.base.json": true,
+    "pnpm-lock.yaml": true,
+    "pnpm-workspace.yaml": true,
+  },
+}
