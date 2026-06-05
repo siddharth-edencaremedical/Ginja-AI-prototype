@@ -24,7 +24,7 @@ export function ProductConfigModuleLayout() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div className="mb-2.5 flex flex-wrap items-center gap-2">
             <Badge variant="secondary">Product operations</Badge>
             <Badge variant="outline">4 active markets</Badge>
           </div>
