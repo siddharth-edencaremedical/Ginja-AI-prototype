@@ -1,30 +1,80 @@
 import { defineConfig } from "@rsbuild/core";
 import { pluginReact } from "@rsbuild/plugin-react";
 import { pluginTailwindcss } from "@rsbuild/plugin-tailwindcss";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
-import { URL, fileURLToPath } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(appRoot, "../..");
 const publicDir = path.resolve(workspaceRoot, "public");
+const remoteAssetPrefixPattern =
+  /^(?<origin>(?:https?:)?\/\/[^/]+)?(?<path>\/remote-assets\/(?<remoteId>[^/]+)\/releases\/(?<version>[^/]+)\/)$/;
 
-function getAssetPrefix(remoteEntryUrl: string | undefined): string {
-  if (!remoteEntryUrl) {
+function getRemoteAssetPrefix(remoteId: string): string {
+  const remoteAssetBase = process.env.REMOTE_ASSET_BASE;
+
+  if (!remoteAssetBase) {
     return "/";
   }
 
-  const parsedUrl = new URL(remoteEntryUrl, "http://localhost");
-  const basePath = parsedUrl.pathname.replace(/[^/]*$/, "");
+  const match = remoteAssetBase.match(remoteAssetPrefixPattern);
 
-  if (/^(?:https?:)?\/\//.test(remoteEntryUrl)) {
-    const origin = remoteEntryUrl.startsWith("//")
-      ? `//${parsedUrl.host}`
-      : parsedUrl.origin;
-
-    return `${origin}${basePath}`;
+  if (!match?.groups) {
+    throw new Error(
+      `REMOTE_ASSET_BASE must be an immutable release base like /remote-assets/${remoteId}/releases/<version>/.`
+    );
   }
 
-  return basePath;
+  const matchedRemoteId = match.groups.remoteId;
+  const matchedVersion = match.groups.version;
+
+  if (!matchedRemoteId || !matchedVersion) {
+    throw new Error(
+      `REMOTE_ASSET_BASE must include a remote id and release version for "${remoteId}".`
+    );
+  }
+
+  if (matchedRemoteId !== remoteId) {
+    throw new Error(
+      `REMOTE_ASSET_BASE remote id "${matchedRemoteId}" does not match "${remoteId}".`
+    );
+  }
+
+  if (matchedVersion.trim().length === 0) {
+    throw new Error("REMOTE_ASSET_BASE must include a non-empty release version.");
+  }
+
+  return remoteAssetBase;
+}
+
+function getRemoteBuildDefines(): Record<string, string> {
+  return {
+    __REMOTE_BUILD_BUILT_AT__: JSON.stringify(
+      process.env.REMOTE_BUILD_BUILT_AT ?? new Date().toISOString()
+    ),
+    __REMOTE_BUILD_GIT_SHA__: JSON.stringify(getRemoteBuildGitSha()),
+    __REMOTE_MIN_SHELL_VERSION__: process.env.REMOTE_MIN_SHELL_VERSION
+      ? JSON.stringify(process.env.REMOTE_MIN_SHELL_VERSION)
+      : "undefined"
+  };
+}
+
+function getRemoteBuildGitSha(): string {
+  if (process.env.REMOTE_BUILD_GIT_SHA) {
+    return process.env.REMOTE_BUILD_GIT_SHA;
+  }
+
+  try {
+    return execFileSync("git", ["rev-parse", "--short=12", "HEAD"], {
+      cwd: workspaceRoot,
+      stdio: ["ignore", "pipe", "ignore"]
+    })
+      .toString()
+      .trim();
+  } catch {
+    return "unknown";
+  }
 }
 
 const alias = {
@@ -92,9 +142,10 @@ const shared = {
   "react-router-dom": { singleton: true, requiredVersion: "^7.9.0" }
 } as const;
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [pluginReact(), pluginTailwindcss()],
   source: {
+    define: getRemoteBuildDefines(),
     entry: {
       index: "./src/main.tsx"
     }
@@ -106,7 +157,7 @@ export default defineConfig({
     template: "./index.html"
   },
   output: {
-    assetPrefix: getAssetPrefix(process.env.UNDERWRITING_REMOTE_URL),
+    assetPrefix: getRemoteAssetPrefix("underwriting"),
     cleanDistPath: true,
     distPath: {
       root: path.resolve(workspaceRoot, "dist/apps/underwriting")
@@ -127,5 +178,8 @@ export default defineConfig({
       },
       shared
     }
+  },
+  tools: {
+    htmlPlugin: command === "build" ? false : undefined
   }
-});
+}));

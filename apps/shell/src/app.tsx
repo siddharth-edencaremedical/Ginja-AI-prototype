@@ -45,9 +45,10 @@ import type { FeatureFlagState } from "@ginja/feature-flags";
 import { createLogger } from "@ginja/logging";
 import { hasEveryPermission } from "@ginja/permissions";
 import type { PermissionSubject } from "@ginja/permissions";
-import type {
-  RemoteModuleManifest,
-  RemoteRegistryItem
+import {
+  REMOTE_MODULE_CONTRACT_VERSION,
+  type RemoteModuleManifest,
+  type RemoteRegistryItem
 } from "@ginja/shared-types";
 import { loadRemote, registerRemotes } from "@module-federation/runtime-tools";
 import {
@@ -81,6 +82,7 @@ import {
 import type { KnownRemoteRegistration } from "./remote-registry";
 
 const logger = createLogger("shell");
+const supportedRemoteContractVersions = new Set([REMOTE_MODULE_CONTRACT_VERSION]);
 
 type RemoteRuntimeState =
   | {
@@ -387,12 +389,36 @@ function useRemoteManifests(
         setRemoteStates(createRemoteStates(runtimeRegistry, subject, flags));
 
         runtimeRegistry.forEach((registration) => {
+          const knownRegistration = knownRemoteRegistrations.find(
+            (knownRemote) => knownRemote.id === registration.id
+          );
+          const registryCompatibilityError = getRemoteRegistryCompatibilityError(
+            registration,
+            knownRegistration
+          );
+
+          if (registryCompatibilityError) {
+            logger.error("Remote registry item is incompatible", {
+              error: registryCompatibilityError.message,
+              remoteId: registration.id
+            });
+
+            return;
+          }
+
           if (!canLoadRemote(registration, subject, flags)) {
             return;
           }
 
           loadRemoteManifest(registration.remoteName, registration.remoteEntryUrl)
             .then((manifest) => {
+              const manifestCompatibilityError =
+                getRemoteManifestCompatibilityError(registration, manifest);
+
+              if (manifestCompatibilityError) {
+                throw manifestCompatibilityError;
+              }
+
               if (cancelled) {
                 return;
               }
@@ -472,6 +498,104 @@ function canLoadRemote(
   );
 }
 
+function getRemoteRegistryCompatibilityError(
+  registration: RemoteRegistryItem,
+  knownRegistration?: KnownRemoteRegistration
+): Error | undefined {
+  if (!isSupportedRemoteContractVersion(registration.contractVersion)) {
+    return new Error(
+      `Remote "${registration.id}" registry contract version ${registration.contractVersion} is not supported.`
+    );
+  }
+
+  if (!knownRegistration) {
+    return undefined;
+  }
+
+  if (registration.routeBasePath !== knownRegistration.routeBasePath) {
+    return new Error(
+      `Remote "${registration.id}" registry route base path "${registration.routeBasePath}" does not match expected route base path "${knownRegistration.routeBasePath}".`
+    );
+  }
+
+  if (registration.remoteName !== knownRegistration.remoteName) {
+    return new Error(
+      `Remote "${registration.id}" registry remote name "${registration.remoteName}" does not match expected remote name "${knownRegistration.remoteName}".`
+    );
+  }
+
+  if (
+    !haveSameStringSet(
+      registration.requiredPermissions,
+      knownRegistration.requiredPermissions
+    )
+  ) {
+    return new Error(
+      `Remote "${registration.id}" registry permissions ${formatStringSet(registration.requiredPermissions)} do not match expected permissions ${formatStringSet(knownRegistration.requiredPermissions)}.`
+    );
+  }
+
+  return undefined;
+}
+
+function getRemoteManifestCompatibilityError(
+  registration: RemoteRegistryItem,
+  manifest: RemoteModuleManifest
+): Error | undefined {
+  if (!isSupportedRemoteContractVersion(manifest.contractVersion)) {
+    return new Error(
+      `Remote "${registration.id}" manifest contract version ${manifest.contractVersion} is not supported.`
+    );
+  }
+
+  if (manifest.id !== registration.id) {
+    return new Error(
+      `Remote manifest id "${manifest.id}" does not match registry id "${registration.id}".`
+    );
+  }
+
+  if (manifest.routeBasePath !== registration.routeBasePath) {
+    return new Error(
+      `Remote "${registration.id}" manifest route base path "${manifest.routeBasePath}" does not match registry route base path "${registration.routeBasePath}".`
+    );
+  }
+
+  if (
+    !haveSameStringSet(
+      manifest.requiredPermissions,
+      registration.requiredPermissions
+    )
+  ) {
+    return new Error(
+      `Remote "${registration.id}" manifest permissions ${formatStringSet(manifest.requiredPermissions)} do not match registry permissions ${formatStringSet(registration.requiredPermissions)}.`
+    );
+  }
+
+  return undefined;
+}
+
+function isSupportedRemoteContractVersion(contractVersion: number): boolean {
+  return supportedRemoteContractVersions.has(contractVersion);
+}
+
+function haveSameStringSet(left: string[], right: string[]): boolean {
+  const normalizedLeft = normalizeStringSet(left);
+  const normalizedRight = normalizeStringSet(right);
+
+  return (
+    normalizedLeft.length === normalizedRight.length &&
+    normalizedLeft.every((value, index) => value === normalizedRight[index])
+  );
+}
+
+function normalizeStringSet(values: string[]): string[] {
+  return Array.from(new Set(values)).sort();
+}
+
+function formatStringSet(values: string[]): string {
+  return `[${normalizeStringSet(values).join(", ")}]`;
+}
+
 function createInitialRemoteStates(
   subject: PermissionSubject,
   flags: FeatureFlagState
@@ -511,6 +635,19 @@ function createRemoteStates(
         };
       }
 
+      const compatibilityError = getRemoteRegistryCompatibilityError(
+        runtimeRegistration,
+        knownRegistration
+      );
+
+      if (compatibilityError) {
+        return {
+          registration: knownRegistration,
+          status: "failed",
+          error: compatibilityError
+        };
+      }
+
       return {
         registration: runtimeRegistration,
         status: "loading"
@@ -519,10 +656,29 @@ function createRemoteStates(
   );
   const additionalRuntimeStates = runtimeRegistry
     .filter((registration) => !knownRemoteIds.has(registration.id))
-    .map<RemoteRuntimeState>((registration) => ({
-      registration,
-      status: canLoadRemote(registration, subject, flags) ? "loading" : "blocked"
-    }));
+    .map<RemoteRuntimeState>((registration) => {
+      if (!canLoadRemote(registration, subject, flags)) {
+        return {
+          registration,
+          status: "blocked"
+        };
+      }
+
+      const compatibilityError = getRemoteRegistryCompatibilityError(registration);
+
+      if (compatibilityError) {
+        return {
+          registration,
+          status: "failed",
+          error: compatibilityError
+        };
+      }
+
+      return {
+        registration,
+        status: "loading"
+      };
+    });
 
   return [...knownRemoteStates, ...additionalRuntimeStates];
 }

@@ -2,6 +2,7 @@ import type {
   RemoteRegistryItem,
   RemoteRegistryResponse
 } from "@ginja/shared-types";
+import { REMOTE_MODULE_CONTRACT_VERSION } from "@ginja/shared-types";
 
 import { apiClient } from "./api-client";
 
@@ -43,7 +44,7 @@ const localDevelopmentRemoteRegistry: RemoteRegistryItem[] = [
     ...productConfigRegistration,
     remoteEntryUrl: "http://localhost:4201/remoteEntry.js",
     version: "local-dev",
-    contractVersion: 1,
+    contractVersion: REMOTE_MODULE_CONTRACT_VERSION,
     builtAt: "1970-01-01T00:00:00.000Z",
     gitSha: "local-dev"
   },
@@ -51,7 +52,7 @@ const localDevelopmentRemoteRegistry: RemoteRegistryItem[] = [
     ...underwritingRegistration,
     remoteEntryUrl: "http://localhost:4202/remoteEntry.js",
     version: "local-dev",
-    contractVersion: 1,
+    contractVersion: REMOTE_MODULE_CONTRACT_VERSION,
     builtAt: "1970-01-01T00:00:00.000Z",
     gitSha: "local-dev"
   }

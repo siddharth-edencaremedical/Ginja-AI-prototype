@@ -25,6 +25,10 @@ export interface RemoteModuleManifest {
   requiredPermissions: string[];
   featureFlags?: string[];
   routes: RouteObject[];
+  contractVersion: number;
+  minShellVersion?: string;
+  builtAt: string;
+  gitSha: string;
 }
 
 export interface RemoteNavigationItem {

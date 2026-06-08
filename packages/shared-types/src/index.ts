@@ -1,5 +1,7 @@
 import type { RouteObject } from "react-router-dom";
 
+export const REMOTE_MODULE_CONTRACT_VERSION = 1;
+
 export interface RemoteModuleManifest {
   id: string;
   displayName: string;
@@ -8,6 +10,10 @@ export interface RemoteModuleManifest {
   requiredPermissions: string[];
   featureFlags?: string[];
   routes: RouteObject[];
+  contractVersion: number;
+  minShellVersion?: string;
+  builtAt: string;
+  gitSha: string;
 }
 
 export interface RemoteRegistryItem {

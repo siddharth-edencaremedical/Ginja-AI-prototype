@@ -129,6 +129,10 @@ export interface RemoteModuleManifest {
   requiredPermissions: string[];
   featureFlags?: string[];
   routes: RouteObject[];
+  contractVersion: number;
+  minShellVersion?: string;
+  builtAt: string;
+  gitSha: string;
 }
 
 export interface RemoteNavigationItem {
@@ -257,21 +261,25 @@ The shell no longer inlines remote entry URLs at build time. Remote entry URL
 selection comes from `/api/runtime/remotes`; local development falls back to the
 localhost URLs in `apps/shell/src/remote-registry.ts`.
 
-Remote builds still read their remote entry URL environment variables to derive
-their production asset prefixes, so a remote copied under
-`/remotes/product-config/` loads its own follow-up chunks from that folder
-instead of `/static/`.
+Remote production builds read `REMOTE_ASSET_BASE` to derive their asset prefix.
+Set it to the immutable release base that the backend registry will expose for
+that remote, so follow-up chunks, CSS, fonts, and images load from the same
+protected gateway path as `remoteEntry.js`.
 
-For production builds, set the production remote entry URLs before building the
-remotes. The URLs can point to the same host as the shell; the remotes do not
-need separate deployments for this prototype.
+When `REMOTE_ASSET_BASE` is not set, remote builds default to `/` for local
+build checks only. A `/` asset prefix is not a valid production remote release.
+Remote builds also accept optional `REMOTE_BUILD_BUILT_AT`,
+`REMOTE_BUILD_GIT_SHA`, and `REMOTE_MIN_SHELL_VERSION` values for manifest
+metadata.
 
 Example:
 
 ```bash
-PRODUCT_CONFIG_REMOTE_URL=/remotes/product-config/remoteEntry.js \
-UNDERWRITING_REMOTE_URL=/remotes/underwriting/remoteEntry.js \
-pnpm build
+REMOTE_ASSET_BASE=/remote-assets/product-config/releases/2026.06.08-a1b2c3/ \
+pnpm nx build product-config
+
+REMOTE_ASSET_BASE=/remote-assets/underwriting/releases/2026.06.08-d4e5f6/ \
+pnpm nx build underwriting
 ```
 
 ## Development Commands
@@ -320,31 +328,32 @@ dist/apps/underwriting/
 dist/packages/*
 ```
 
-For the simplest production deployment of this prototype, use one static host:
+For production-style release artifacts, build the shell and each remote
+independently:
 
-1. Build all apps with same-origin remote URLs:
+1. Build the shell:
 
    ```bash
-   PRODUCT_CONFIG_REMOTE_URL=/remotes/product-config/remoteEntry.js \
-   UNDERWRITING_REMOTE_URL=/remotes/underwriting/remoteEntry.js \
-   pnpm build
+   pnpm nx build shell
    ```
 
-2. Copy or publish `dist/apps/product-config` under the shell host at `/remotes/product-config/`.
-3. Copy or publish `dist/apps/underwriting` under the shell host at `/remotes/underwriting/`.
-4. Deploy the shell host as one static site containing:
+2. Build each remote with its immutable release base:
 
-   ```txt
-   /
-     ...shell files from dist/apps/shell
-     remotes/
-       product-config/
-         ...files from dist/apps/product-config
-       underwriting/
-         ...files from dist/apps/underwriting
+   ```bash
+   REMOTE_ASSET_BASE=/remote-assets/product-config/releases/<version>/ \
+   pnpm nx build product-config
+
+   REMOTE_ASSET_BASE=/remote-assets/underwriting/releases/<version>/ \
+   pnpm nx build underwriting
    ```
 
-That is still Module Federation: the shell dynamically requests `remoteEntry.js` only after permission checks pass. The difference is hosting topology, not architecture. Separate remote deployments are optional if you later want independent release pipelines for each vertical team.
+3. Publish each remote's `dist/apps/<remote>` contents under the corresponding
+   private remote release prefix. Production remote builds intentionally omit
+   `index.html`; standalone remote apps are for local dev only.
+
+The shell still dynamically requests `remoteEntry.js` only after permission
+checks pass. Runtime remote URL selection comes from `/api/runtime/remotes`, not
+from shell build-time environment variables.
 
 ## shadcn Design System
 
