@@ -20,5 +20,5 @@ bucket_name = "ginja-ai-prototype-remote-artifacts"
 [[d1_databases]]
 binding = "REMOTE_REGISTRY"
 database_name = "ginja-ai-prototype-remote-registry"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "40af41e9-e69f-40a8-a152-094c86ff5351"
 migrations_dir = "migrations"
