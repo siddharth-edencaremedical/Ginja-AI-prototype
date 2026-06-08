@@ -145,11 +145,11 @@ jobs:
           }
 
           if has_app product-config; then
-            pnpm cf:release:remote product-config --remote --activate --smoke-url "$WORKER_URL" --skip-checks --skip-build
+            pnpm cf:release:remote product-config --remote --activate --smoke-url "$WORKER_URL" --skip-checks
           fi
 
           if has_app underwriting; then
-            pnpm cf:release:remote underwriting --remote --activate --smoke-url "$WORKER_URL" --skip-checks --skip-build
+            pnpm cf:release:remote underwriting --remote --activate --smoke-url "$WORKER_URL" --skip-checks
           fi
 
           if ! has_app product-config && ! has_app underwriting; then

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
   d1Execute,
@@ -101,6 +102,8 @@ if (files.length === 0) {
 if (!files.some((file) => toPosixRelative(distRoot, file) === "remoteEntry.js")) {
   fail(`Build output for ${remoteId} does not include remoteEntry.js.`);
 }
+
+assertRemoteEntryUsesAssetBase(distRoot, remoteId, assetBase);
 
 if (!getBooleanFlag(flags, "skip-upload")) {
   for (const file of files) {
@@ -239,3 +242,14 @@ if (getBooleanFlag(flags, "activate")) {
 console.log(`Release version: ${version}`);
 console.log(`Remote asset base: ${assetBase}`);
 console.log(`R2 prefix: ${r2Prefix}`);
+
+function assertRemoteEntryUsesAssetBase(distRoot, remoteId, assetBase) {
+  const remoteEntryPath = path.join(distRoot, "remoteEntry.js");
+  const remoteEntrySource = readFileSync(remoteEntryPath, "utf8");
+
+  if (!remoteEntrySource.includes(assetBase)) {
+    fail(
+      `Build output for ${remoteId} does not reference ${assetBase}. Rebuild without --skip-build so remote chunks load from the immutable release path.`
+    );
+  }
+}
