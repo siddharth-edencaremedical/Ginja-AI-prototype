@@ -6,7 +6,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@ginja/design-system";
-import { ClipboardListIcon, UserPlusIcon } from "lucide-react";
+import { UserPlusIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const routeBasePath = "/underwriting";
@@ -35,10 +35,6 @@ export function UnderwritingModuleLayout() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline">
-            <ClipboardListIcon data-icon="inline-start" />
-            Triage rules
-          </Button>
           <Button>
             <UserPlusIcon data-icon="inline-start" />
             Assign case
