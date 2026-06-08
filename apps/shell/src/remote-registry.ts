@@ -59,6 +59,11 @@ const localDevelopmentRemoteRegistry: RemoteRegistryItem[] = [
 
 export async function fetchRuntimeRemoteRegistry(): Promise<RemoteRegistryItem[]> {
   const response = await apiClient.get<RemoteRegistryResponse>("/runtime/remotes");
+
+  if (!Array.isArray(response.remotes)) {
+    throw new Error("Runtime remote registry response did not include remotes.");
+  }
+
   return response.remotes;
 }
 
