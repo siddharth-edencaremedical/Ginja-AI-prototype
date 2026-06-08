@@ -448,6 +448,25 @@ sets a temporary same-origin session cookie after `/api/runtime/remotes`. The
 browser login flow uses those same demo tokens, so the deployed prototype can be
 validated before a real `SESSION_VALIDATION_URL` is configured.
 
+## GitHub Actions CI/CD
+
+The repository uses GitHub Actions for both verification and deployment:
+
+- `CI` runs on every pull request and on pushes to `main`.
+- It uses `nx affected` so only changed projects, plus their dependents, run `lint`, `typecheck`, and `build`.
+- `Deploy` runs after `CI` succeeds on `main`.
+- It uses `nx affected` to build only the changed projects, deploys the shell Worker only when the shell, worker, or worker config changed, and releases only the affected remotes with smoke checks.
+- Root infra changes such as `wrangler.toml` and migration SQL still trigger the relevant deploy steps even though Nx does not surface them as affected apps.
+- `Rollback Validation` is a manual workflow that rolls a remote back to a previous version, smoke-checks the active pointer, and restores the original version unless you opt out.
+
+Required repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `WORKER_URL`
+
+`WORKER_URL` should point at the deployed Worker origin used by smoke checks, for example a `workers.dev` URL or a custom domain.
+
 ## Production Build
 
 Build all apps and packages:
@@ -603,4 +622,4 @@ The next likely milestones are:
 - Add real API transport behind `@ginja/api-client`.
 - Add automated tests once workflows stabilize.
 - Add more vertical modules such as claims, billing, policy administration, or member management.
-- Add CI checks for build, typecheck, lint, and later tests.
+- Extend CI with tests once they are introduced.

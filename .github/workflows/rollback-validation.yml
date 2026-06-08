@@ -1,0 +1,94 @@
+name: Rollback Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      remote_id:
+        description: Remote to validate
+        required: true
+        type: choice
+        options:
+          - product-config
+          - underwriting
+      rollback_version:
+        description: Version to roll back to
+        required: true
+        type: string
+      environment:
+        description: Registry environment
+        required: false
+        default: development
+        type: string
+      tenant_id:
+        description: Tenant activation key
+        required: false
+        default: tenant-ginja-ai
+        type: string
+      restore_after:
+        description: Restore the original active version after validation
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rollback-validation-${{ github.event.inputs.remote_id }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      CI: "1"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WORKER_URL: ${{ secrets.WORKER_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify validation environment
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$WORKER_URL" ]; then
+            echo "CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and WORKER_URL are required."
+            exit 1
+          fi
+
+      - name: Validate rollback
+        run: |
+          args=(
+            pnpm
+            cf:validate:rollback:remote
+            "${{ inputs.remote_id }}"
+            "${{ inputs.rollback_version }}"
+            --remote
+            --environment "${{ inputs.environment }}"
+            --tenant "${{ inputs.tenant_id }}"
+            --smoke-url "$WORKER_URL"
+          )
+
+          if [ "${{ inputs.restore_after }}" != "true" ]; then
+            args+=(--skip-restore)
+          fi
+
+          "${args[@]}"

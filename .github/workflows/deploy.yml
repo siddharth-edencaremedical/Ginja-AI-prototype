@@ -1,0 +1,157 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    branches:
+      - main
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    env:
+      CI: "1"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WORKER_URL: ${{ secrets.WORKER_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve affected range
+        id: range
+        shell: bash
+        run: |
+          base="$(git rev-parse HEAD^)"
+          head="$(git rev-parse HEAD)"
+
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+
+      - name: Collect affected apps
+        shell: bash
+        run: |
+          affected_apps="$(pnpm exec nx show projects --affected --type app --base="${{ steps.range.outputs.base }}" --head="${{ steps.range.outputs.head }}" --sep=$'\n')"
+
+          echo "Affected apps:"
+          printf '%s\n' "$affected_apps"
+
+          {
+            echo 'AFFECTED_APPS<<EOF'
+            printf '%s\n' "$affected_apps"
+            echo EOF
+          } >> "$GITHUB_ENV"
+
+      - name: Detect infra-only changes
+        shell: bash
+        run: |
+          changed_files="$(git diff --name-only "${{ steps.range.outputs.base }}" "${{ steps.range.outputs.head }}")"
+
+          worker_config_changed=false
+          if printf '%s\n' "$changed_files" | grep -qx 'wrangler.toml'; then
+            worker_config_changed=true
+          fi
+
+          migrations_changed=false
+          if printf '%s\n' "$changed_files" | grep -Eq '^migrations/.+\.sql$'; then
+            migrations_changed=true
+          fi
+
+          {
+            echo "WORKER_CONFIG_CHANGED=$worker_config_changed" >> "$GITHUB_ENV"
+            echo "MIGRATIONS_CHANGED=$migrations_changed" >> "$GITHUB_ENV"
+          }
+
+      - name: Verify deployment environment
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$WORKER_URL" ]; then
+            echo "CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and WORKER_URL are required."
+            exit 1
+          fi
+
+      - name: Build affected app artifacts
+        run: pnpm exec nx affected -t build --base="${{ steps.range.outputs.base }}" --head="${{ steps.range.outputs.head }}" --exclude=cloudflare-worker --outputStyle=static
+
+      - name: Deploy shell worker if needed
+        shell: bash
+        run: |
+          has_app() {
+            printf '%s\n' "$AFFECTED_APPS" | grep -qx "$1"
+          }
+
+          if has_app shell || [ "$WORKER_CONFIG_CHANGED" = "true" ]; then
+            if ! has_app shell && [ "$WORKER_CONFIG_CHANGED" = "true" ]; then
+              pnpm nx build shell
+            fi
+
+            pnpm cf:deploy:shell --skip-build
+          elif has_app cloudflare-worker; then
+            pnpm nx build shell
+            pnpm cf:deploy:shell --skip-build
+          else
+            echo "Shell worker unchanged; skipping worker deploy."
+          fi
+
+      - name: Apply remote registry migrations
+        shell: bash
+        run: |
+          has_app() {
+            printf '%s\n' "$AFFECTED_APPS" | grep -qx "$1"
+          }
+
+          if has_app product-config || has_app underwriting || [ "$MIGRATIONS_CHANGED" = "true" ]; then
+            pnpm cf:migrate:remote-registry
+          else
+            echo "No remote releases affected; skipping remote registry migration."
+          fi
+
+      - name: Release affected remotes
+        shell: bash
+        run: |
+          has_app() {
+            printf '%s\n' "$AFFECTED_APPS" | grep -qx "$1"
+          }
+
+          if has_app product-config; then
+            pnpm cf:release:remote product-config --remote --activate --smoke-url "$WORKER_URL" --skip-checks --skip-build
+          fi
+
+          if has_app underwriting; then
+            pnpm cf:release:remote underwriting --remote --activate --smoke-url "$WORKER_URL" --skip-checks --skip-build
+          fi
+
+          if ! has_app product-config && ! has_app underwriting; then
+            echo "No remotes need release."
+          fi

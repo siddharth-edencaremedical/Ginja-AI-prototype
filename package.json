@@ -14,11 +14,12 @@
     "dev:underwriting": "nx serve underwriting",
     "cf:migrate:remote-registry": "CI=1 wrangler d1 migrations apply REMOTE_REGISTRY --remote",
     "cf:migrate:remote-registry:local": "CI=1 wrangler d1 migrations apply REMOTE_REGISTRY --local",
-    "cf:deploy:shell": "nx build shell && wrangler deploy --keep-vars",
+    "cf:deploy:shell": "node scripts/cloudflare/deploy-shell.mjs",
     "cf:release:remote": "node scripts/cloudflare/remote-release.mjs",
     "cf:smoke:remote": "node scripts/cloudflare/smoke-remote.mjs",
     "cf:activate:remote": "node scripts/cloudflare/remote-activate.mjs",
-    "cf:rollback:remote": "node scripts/cloudflare/remote-activate.mjs"
+    "cf:rollback:remote": "node scripts/cloudflare/remote-activate.mjs",
+    "cf:validate:rollback:remote": "node scripts/cloudflare/remote-validate-rollback.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260608.1",
