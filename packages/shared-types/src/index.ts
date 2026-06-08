@@ -10,6 +10,26 @@ export interface RemoteModuleManifest {
   routes: RouteObject[];
 }
 
+export interface RemoteRegistryItem {
+  id: string;
+  displayName: string;
+  routeBasePath: `/${string}`;
+  scopeClassName: string;
+  remoteName: string;
+  remoteEntryUrl: string;
+  requiredPermissions: string[];
+  featureFlags?: string[];
+  version: string;
+  contractVersion: number;
+  minShellVersion?: string;
+  builtAt: string;
+  gitSha: string;
+}
+
+export interface RemoteRegistryResponse {
+  remotes: RemoteRegistryItem[];
+}
+
 export interface RemoteNavigationItem {
   id: string;
   label: string;

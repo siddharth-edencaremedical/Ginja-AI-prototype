@@ -89,6 +89,7 @@ export function createFetchTransport(): Transport {
 
     const response = await fetch(`${context.baseUrl ?? ""}${request.path}`, {
       method: request.method,
+      credentials: "same-origin",
       headers,
       body: request.body === undefined ? undefined : JSON.stringify(request.body)
     });

@@ -5,6 +5,7 @@ coverage/
 .DS_Store
 *.log
 .env.local
+docs/plan/
 
 # Claude Code local/runtime state
 .claude/scheduled_tasks.lock

@@ -45,7 +45,10 @@ import type { FeatureFlagState } from "@ginja/feature-flags";
 import { createLogger } from "@ginja/logging";
 import { hasEveryPermission } from "@ginja/permissions";
 import type { PermissionSubject } from "@ginja/permissions";
-import type { RemoteModuleManifest } from "@ginja/shared-types";
+import type {
+  RemoteModuleManifest,
+  RemoteRegistryItem
+} from "@ginja/shared-types";
 import { loadRemote, registerRemotes } from "@module-federation/runtime-tools";
 import {
   ArrowUpRightIcon,
@@ -69,36 +72,32 @@ import {
 } from "react-router-dom";
 
 import { LoginPage } from "./login-page";
+import {
+  fetchRuntimeRemoteRegistry,
+  getLocalDevelopmentRemoteRegistry,
+  isLocalDevelopmentHost,
+  knownRemoteRegistrations
+} from "./remote-registry";
+import type { KnownRemoteRegistration } from "./remote-registry";
 
 const logger = createLogger("shell");
 
-interface RemoteRegistration {
-  id: string;
-  displayName: string;
-  routeBasePath: `/${string}`;
-  scopeClassName: string;
-  requiredPermissions: string[];
-  featureFlags?: string[];
-  remoteName: string;
-  remoteEntryUrl: string;
-}
-
 type RemoteRuntimeState =
   | {
-      registration: RemoteRegistration;
+      registration: KnownRemoteRegistration;
       status: "blocked";
     }
   | {
-      registration: RemoteRegistration;
+      registration: KnownRemoteRegistration;
       status: "loading";
     }
   | {
-      registration: RemoteRegistration;
+      registration: RemoteRegistryItem;
       status: "ready";
       manifest: RemoteModuleManifest;
     }
   | {
-      registration: RemoteRegistration;
+      registration: KnownRemoteRegistration;
       status: "failed";
       error: unknown;
     };
@@ -110,27 +109,6 @@ interface ShellNavigationItem {
   path: string;
   order?: number;
 }
-
-const remoteRegistry: RemoteRegistration[] = [
-  {
-    id: "product-config",
-    displayName: "Product Config",
-    routeBasePath: "/product-config",
-    scopeClassName: "product-config-remote",
-    requiredPermissions: ["product-config:view"],
-    remoteName: "product_config",
-    remoteEntryUrl: __PRODUCT_CONFIG_REMOTE_URL__
-  },
-  {
-    id: "underwriting",
-    displayName: "Underwriting",
-    routeBasePath: "/underwriting",
-    scopeClassName: "underwriting-remote",
-    requiredPermissions: ["underwriting:view"],
-    remoteName: "underwriting",
-    remoteEntryUrl: __UNDERWRITING_REMOTE_URL__
-  }
-];
 
 const remoteIcons: Record<string, LucideIcon> = {
   "product-config": BoxesIcon,
@@ -400,44 +378,64 @@ function useRemoteManifests(
 
     setRemoteStates(createInitialRemoteStates(subject, flags));
 
-    remoteRegistry.forEach((registration) => {
-      if (!canLoadRemote(registration, subject, flags)) {
-        return;
-      }
+    loadRuntimeRemoteRegistry()
+      .then((runtimeRegistry) => {
+        if (cancelled) {
+          return;
+        }
 
-      loadRemoteManifest(registration.remoteName, registration.remoteEntryUrl)
-        .then((manifest) => {
-          if (cancelled) {
+        setRemoteStates(createRemoteStates(runtimeRegistry, subject, flags));
+
+        runtimeRegistry.forEach((registration) => {
+          if (!canLoadRemote(registration, subject, flags)) {
             return;
           }
 
-          setRemoteStates((currentStates) =>
-            updateRemoteState(currentStates, {
-              registration,
-              status: "ready",
-              manifest
-            })
-          );
-        })
-        .catch((error: unknown) => {
-          logger.error("Remote manifest unavailable", {
-            error: getErrorMessage(error),
-            remoteId: registration.id
-          });
+          loadRemoteManifest(registration.remoteName, registration.remoteEntryUrl)
+            .then((manifest) => {
+              if (cancelled) {
+                return;
+              }
 
-          if (cancelled) {
-            return;
-          }
-
-          setRemoteStates((currentStates) =>
-            updateRemoteState(currentStates, {
-              registration,
-              status: "failed",
-              error
+              setRemoteStates((currentStates) =>
+                updateRemoteState(currentStates, {
+                  registration,
+                  status: "ready",
+                  manifest
+                })
+              );
             })
-          );
+            .catch((error: unknown) => {
+              logger.error("Remote manifest unavailable", {
+                error: getErrorMessage(error),
+                remoteId: registration.id
+              });
+
+              if (cancelled) {
+                return;
+              }
+
+              setRemoteStates((currentStates) =>
+                updateRemoteState(currentStates, {
+                  registration,
+                  status: "failed",
+                  error
+                })
+              );
+            });
         });
-    });
+      })
+      .catch((error: unknown) => {
+        logger.error("Runtime remote registry unavailable", {
+          error: getErrorMessage(error)
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        setRemoteStates(createFailedRemoteStates(subject, flags, error));
+      });
 
     return () => {
       cancelled = true;
@@ -447,8 +445,24 @@ function useRemoteManifests(
   return remoteStates;
 }
 
+async function loadRuntimeRemoteRegistry(): Promise<RemoteRegistryItem[]> {
+  try {
+    return await fetchRuntimeRemoteRegistry();
+  } catch (error) {
+    if (isLocalDevelopmentHost()) {
+      logger.warn("Using local development remote registry fallback", {
+        error: getErrorMessage(error)
+      });
+
+      return getLocalDevelopmentRemoteRegistry();
+    }
+
+    throw error;
+  }
+}
+
 function canLoadRemote(
-  registration: RemoteRegistration,
+  registration: KnownRemoteRegistration,
   subject: PermissionSubject,
   flags: FeatureFlagState
 ): boolean {
@@ -462,10 +476,76 @@ function createInitialRemoteStates(
   subject: PermissionSubject,
   flags: FeatureFlagState
 ): RemoteRuntimeState[] {
-  return remoteRegistry.map((registration) => ({
+  return knownRemoteRegistrations.map((registration) => ({
     registration,
     status: canLoadRemote(registration, subject, flags) ? "loading" : "blocked"
   }));
+}
+
+function createRemoteStates(
+  runtimeRegistry: RemoteRegistryItem[],
+  subject: PermissionSubject,
+  flags: FeatureFlagState
+): RemoteRuntimeState[] {
+  const runtimeRegistryById = new Map(
+    runtimeRegistry.map((registration) => [registration.id, registration])
+  );
+  const knownRemoteIds = new Set(
+    knownRemoteRegistrations.map((registration) => registration.id)
+  );
+  const knownRemoteStates = knownRemoteRegistrations.map<RemoteRuntimeState>(
+    (knownRegistration) => {
+      if (!canLoadRemote(knownRegistration, subject, flags)) {
+        return {
+          registration: knownRegistration,
+          status: "blocked"
+        };
+      }
+
+      const runtimeRegistration = runtimeRegistryById.get(knownRegistration.id);
+
+      if (!runtimeRegistration || !canLoadRemote(runtimeRegistration, subject, flags)) {
+        return {
+          registration: knownRegistration,
+          status: "blocked"
+        };
+      }
+
+      return {
+        registration: runtimeRegistration,
+        status: "loading"
+      };
+    }
+  );
+  const additionalRuntimeStates = runtimeRegistry
+    .filter((registration) => !knownRemoteIds.has(registration.id))
+    .map<RemoteRuntimeState>((registration) => ({
+      registration,
+      status: canLoadRemote(registration, subject, flags) ? "loading" : "blocked"
+    }));
+
+  return [...knownRemoteStates, ...additionalRuntimeStates];
+}
+
+function createFailedRemoteStates(
+  subject: PermissionSubject,
+  flags: FeatureFlagState,
+  error: unknown
+): RemoteRuntimeState[] {
+  return knownRemoteRegistrations.map((registration) => {
+    if (!canLoadRemote(registration, subject, flags)) {
+      return {
+        registration,
+        status: "blocked"
+      };
+    }
+
+    return {
+      registration,
+      status: "failed",
+      error
+    };
+  });
 }
 
 function updateRemoteState(
@@ -787,7 +867,7 @@ function getTopbarTitle(
     return "Work overview";
   }
 
-  const matchingRemote = remoteRegistry.find((registration) =>
+  const matchingRemote = knownRemoteRegistrations.find((registration) =>
     isPathWithinBase(pathname, registration.routeBasePath)
   );
 

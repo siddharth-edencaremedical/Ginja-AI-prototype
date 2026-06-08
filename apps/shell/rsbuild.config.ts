@@ -76,18 +76,6 @@ const shared = {
 export default defineConfig({
   plugins: [pluginReact(), pluginTailwindcss()],
   source: {
-    // Remote entry URLs are inlined for runtime use. Unlike the build-time
-    // `remotes` config (removed below), defining them here does NOT register
-    // the remotes with the MF runtime — the shell registers each one on
-    // demand, gated by permission (see app.tsx).
-    define: {
-      __PRODUCT_CONFIG_REMOTE_URL__: JSON.stringify(
-        process.env.PRODUCT_CONFIG_REMOTE_URL ?? ""
-      ),
-      __UNDERWRITING_REMOTE_URL__: JSON.stringify(
-        process.env.UNDERWRITING_REMOTE_URL ?? ""
-      )
-    },
     entry: {
       index: "./src/main.tsx"
     }

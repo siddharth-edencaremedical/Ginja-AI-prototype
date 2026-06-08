@@ -166,39 +166,39 @@ moduleFederation: {
 
 A static `remotes` config would hand every remote URL to the Module Federation runtime up front. That can cause the browser to contact remote origins even when the user should not have access.
 
-Instead, the shell keeps a local `remoteRegistry` in `apps/shell/src/app.tsx`:
+Instead, after authentication the shell fetches runtime remote metadata from
+`GET /api/runtime/remotes`. The response uses the shared
+`RemoteRegistryResponse` contract and contains URL-bearing entries only for
+remotes the backend is willing to expose to the current session:
 
 ```ts
-const remoteRegistry = [
-  {
-    id: "product-config",
-    requiredPermissions: ["product-config:view"],
-    remoteName: "product_config",
-    remoteEntryUrl: __PRODUCT_CONFIG_REMOTE_URL__
-  },
-  {
-    id: "underwriting",
-    requiredPermissions: ["underwriting:view"],
-    remoteName: "underwriting",
-    remoteEntryUrl: __UNDERWRITING_REMOTE_URL__
-  }
-];
+interface RemoteRegistryResponse {
+  remotes: RemoteRegistryItem[];
+}
 ```
+
+The shell also keeps non-URL route metadata in
+`apps/shell/src/remote-registry.ts`. That metadata lets the shell render blocked
+deep links without handing protected remote URLs to the Module Federation
+runtime. On localhost, if `/api/runtime/remotes` is not available yet, the same
+file returns a development fallback registry with the current dev remote URLs.
 
 At runtime:
 
 1. The user logs in and the shell receives a session.
-2. The shell checks each registry entry with `hasEveryPermission(...)` and feature flag helpers.
-3. If the user is not allowed, the remote state is `blocked`.
-4. Blocked remotes are not passed to `registerRemotes(...)`.
-5. Blocked remotes are not loaded with `loadRemote(...)`.
-6. The browser makes zero requests to that remote's origin, including on direct deep links.
-7. If the user is allowed, the shell registers the remote and loads only its `manifest`.
-8. The manifest is re-checked at render time as defense in depth.
+2. The shell calls `GET /api/runtime/remotes`.
+3. If the backend endpoint is absent on localhost, the shell uses the local dev fallback registry.
+4. The shell checks each URL-bearing registry entry with `hasEveryPermission(...)` and feature flag helpers.
+5. If the user is not allowed, the remote state is `blocked`.
+6. Blocked remotes are not passed to `registerRemotes(...)`.
+7. Blocked remotes are not loaded with `loadRemote(...)`.
+8. The browser makes zero requests to that remote's origin, including on direct deep links.
+9. If the user is allowed, the shell registers the remote and loads only its `manifest`.
+10. The manifest is re-checked at render time as defense in depth.
 
 Because the shell must decide before loading a remote, required permissions live in two places:
 
-- The shell's `remoteRegistry`, so the shell can gate loading without touching the remote.
+- The runtime registry item returned by `/api/runtime/remotes`, so the shell can gate loading without touching the remote.
 - The remote's own manifest, so access is re-checked after load.
 
 Keep those values in sync when adding or changing a remote.
@@ -253,25 +253,18 @@ When adding another cross-cutting runtime package, add it to the `shared` object
 
 ## Environment Variables
 
-The shell needs remote entry URLs because it is the only app that dynamically registers remotes.
+The shell no longer inlines remote entry URLs at build time. Remote entry URL
+selection comes from `/api/runtime/remotes`; local development falls back to the
+localhost URLs in `apps/shell/src/remote-registry.ts`.
 
-Local development values live in `apps/shell/.env.local`:
+Remote builds still read their remote entry URL environment variables to derive
+their production asset prefixes, so a remote copied under
+`/remotes/product-config/` loads its own follow-up chunks from that folder
+instead of `/static/`.
 
-```env
-PRODUCT_CONFIG_REMOTE_URL=http://localhost:4201/remoteEntry.js
-UNDERWRITING_REMOTE_URL=http://localhost:4202/remoteEntry.js
-```
-
-`apps/shell/rsbuild.config.ts` injects these values with `source.define`:
-
-```ts
-__PRODUCT_CONFIG_REMOTE_URL__
-__UNDERWRITING_REMOTE_URL__
-```
-
-Those defines are inlined into the shell bundle at build time. The remote builds also read the same URLs to derive their production asset prefixes, so a remote copied under `/remotes/product-config/` loads its own follow-up chunks from that folder instead of `/static/`.
-
-For production builds, set the production remote entry URLs before building. The URLs can point to the same host as the shell; the remotes do not need separate deployments for this prototype.
+For production builds, set the production remote entry URLs before building the
+remotes. The URLs can point to the same host as the shell; the remotes do not
+need separate deployments for this prototype.
 
 Example:
 
@@ -428,13 +421,13 @@ Use this checklist when adding a new vertical module:
 2. Give it Nx tags `type:vertical` and an appropriate `scope:*`.
 3. Add a `src/remote/manifest.tsx` that exports `RemoteModuleManifest`.
 4. Expose the manifest in the remote's `rsbuild.config.ts`.
-5. Add the remote's URL define to `apps/shell/rsbuild.config.ts`.
-6. Declare the URL variable in `apps/shell/src/env.d.ts`.
-7. Add the remote to the shell `remoteRegistry` with the required permissions.
+5. Add non-URL shell route metadata to `apps/shell/src/remote-registry.ts`.
+6. Add the localhost fallback URL in `apps/shell/src/remote-registry.ts` while backend registry support is local-only.
+7. Add the remote to the backend `/api/runtime/remotes` source with the required permissions and active remote entry URL.
 8. Add matching `requiredPermissions` to the remote manifest.
 9. Add any new feature flags to `@ginja/feature-flags`.
 10. Add shared singleton dependencies to all app Rsbuild configs if the new remote needs a cross-cutting runtime package.
-11. Update `.env.local` for local dev.
+11. Add any remote-build asset prefix environment variable required by that remote's `rsbuild.config.ts`.
 12. Run `pnpm typecheck`, `pnpm lint`, and `pnpm build`.
 
 Do not add the remote to the shell's static `moduleFederation.options.remotes`. That would bypass the no-load-until-authorized behavior.
@@ -443,11 +436,12 @@ Do not add the remote to the shell's static `moduleFederation.options.remotes`. 
 
 | File | Purpose |
 | --- | --- |
-| `apps/shell/src/app.tsx` | Remote registry, permission gate, shell layout, nav, remote routes, error boundaries |
-| `apps/shell/rsbuild.config.ts` | Shell build config, runtime remote URL defines, empty static remotes config |
+| `apps/shell/src/app.tsx` | Runtime registry consumption, permission gate, shell layout, nav, remote routes, error boundaries |
+| `apps/shell/src/remote-registry.ts` | Known shell remote route metadata and localhost registry fallback |
+| `apps/shell/rsbuild.config.ts` | Shell build config with empty static remotes config |
 | `apps/product-config/src/remote/manifest.tsx` | Product Config public remote contract |
 | `apps/underwriting/src/remote/manifest.tsx` | Underwriting public remote contract |
-| `packages/shared-types/src/index.ts` | `RemoteModuleManifest` and navigation contract |
+| `packages/shared-types/src/index.ts` | `RemoteModuleManifest`, runtime registry, and navigation contracts |
 | `packages/auth/src/client.ts` | Demo personas and mock auth backend |
 | `packages/design-system/src/styles/globals.css` | Tailwind v4 and shadcn token setup |
 | `eslint.config.mjs` | Nx module boundary enforcement |

@@ -53,9 +53,9 @@ The integration API is `RemoteModuleManifest` (`@ginja/shared-types`). Each remo
 - `routes` — React Router `RouteObject[]` the shell mounts under the remote's base path
 - `navigationItems` — nav entries with optional `requiredPermissions` / `requiredFeatureFlags` guards
 
-The shell (`apps/shell/src/app.tsx`) keeps a static `remoteRegistry` declaring each remote's MF container name, `remoteEntry.js` URL, and `requiredPermissions`. It registers a remote with the MF runtime and loads its manifest (`registerRemotes` + `loadRemote` from `@module-federation/runtime-tools`) **only after the access gate passes** — so a user without a remote's permission never has its URL handed to the runtime and the browser makes zero requests to its origin (even on a direct deep-link, which renders "Access denied"). Once loaded, the shell reads the manifest, filters nav items by permission/flag, and wraps each remote in an error boundary. Remotes must not know about each other.
+After authentication, the shell (`apps/shell/src/app.tsx`) fetches runtime remote metadata from `GET /api/runtime/remotes`. URL-bearing registry items use `RemoteRegistryResponse` from `@ginja/shared-types`; local development falls back to localhost entries in `apps/shell/src/remote-registry.ts` when the backend endpoint is not available. The shell registers a remote with the MF runtime and loads its manifest (`registerRemotes` + `loadRemote` from `@module-federation/runtime-tools`) **only after the access gate passes** — so a user without a remote's permission never has its URL handed to the runtime and the browser makes zero requests to its origin (even on a direct deep-link, which renders "Access denied"). Once loaded, the shell reads the manifest, filters nav items by permission/flag, and wraps each remote in an error boundary. Remotes must not know about each other.
 
-Because gating happens before load, each remote's `requiredPermissions` lives in **two** places that must stay in sync: the shell's `remoteRegistry` (so the shell can gate without loading) and the remote's own manifest (defense-in-depth, re-checked at render).
+Because gating happens before load, each remote's `requiredPermissions` lives in **two** places that must stay in sync: the runtime registry item returned by `/api/runtime/remotes` (so the shell can gate without loading) and the remote's own manifest (defense-in-depth, re-checked at render). The shell also keeps non-URL known route metadata for blocked deep links and localhost fallback behavior.
 
 ### Module Boundary Rules (enforced by ESLint + Nx)
 
@@ -79,7 +79,7 @@ All three `rsbuild.config.ts` files load Tailwind via `pluginTailwindcss()` (not
 
 `react`, `react-dom`, `react-router-dom`, `@ginja/auth`, `@ginja/design-system`, and `@ginja/feature-flags` are declared as `shared` singletons in each app's `rsbuild.config.ts`. Only one copy of these runs in the browser at any time. When adding new cross-cutting packages, declare them as shared in all three `rsbuild.config.ts` files.
 
-The shell's `rsbuild.config.ts` deliberately leaves `moduleFederation.options.remotes` **empty** — a static `remotes` entry would hand the runtime each `remoteEntry.js` URL eagerly. Remote URLs are instead injected via `source.define` (`__PRODUCT_CONFIG_REMOTE_URL__`, `__UNDERWRITING_REMOTE_URL__`, declared in `apps/shell/src/env.d.ts`) and registered at runtime by the gated loader. When adding a remote: declare its URL define, add it to `remoteRegistry`, and keep its env var wired through `apps/shell/.env.local`.
+The shell's `rsbuild.config.ts` deliberately leaves `moduleFederation.options.remotes` **empty** — a static `remotes` entry would hand the runtime each `remoteEntry.js` URL eagerly. Remote URLs are instead selected at runtime from `/api/runtime/remotes`, with localhost fallback entries in `apps/shell/src/remote-registry.ts`, and registered by the gated loader. When adding a remote: add non-URL shell route metadata, add/update the runtime registry source, and keep any remote-build asset-prefix env var wired through the remote's `rsbuild.config.ts`.
 
 ### Path Aliases
 
