@@ -11,5 +11,14 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/api/*", "/remote-assets/*"]
 
 [vars]
-PRODUCT_CONFIG_REMOTE_VERSION = "2026.06.08-step3"
-UNDERWRITING_REMOTE_VERSION = "2026.06.08-step3"
+REGISTRY_ENVIRONMENT = "development"
+
+[[r2_buckets]]
+binding = "REMOTE_ARTIFACTS"
+bucket_name = "ginja-ai-prototype-remote-artifacts"
+
+[[d1_databases]]
+binding = "REMOTE_REGISTRY"
+database_name = "ginja-ai-prototype-remote-registry"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

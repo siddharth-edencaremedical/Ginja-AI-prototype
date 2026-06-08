@@ -324,22 +324,129 @@ pnpm nx lint auth
 
 Tests are not configured yet. Current validation is build, typecheck, lint, and manual browser verification.
 
-## Cloudflare Worker Skeleton
+## Cloudflare Worker Runtime
 
-The Step 3 Cloudflare runtime lives in `apps/cloudflare-worker/src/index.ts`,
-with root configuration in `wrangler.toml`. It uses Workers Static Assets to
-serve `dist/apps/shell` through the `ASSETS` binding and runs the Worker first
-for `/api/*` and `/remote-assets/*`.
+The Cloudflare runtime lives in `apps/cloudflare-worker/src/index.ts`, with root
+configuration in `wrangler.toml`. It uses Workers Static Assets to serve
+`dist/apps/shell` through the `ASSETS` binding and runs the Worker first for
+`/api/*` and `/remote-assets/*`.
 
-`GET /api/runtime/remotes` currently uses demo bearer tokens from the mock auth
-client as a stub session source. It returns registry-shaped JSON only for
-remotes allowed by the demo persona and sets a temporary HTTP-only cookie for
-same-origin remote asset requests.
+For this prototype, remote release metadata and active pointers are read from the
+`REMOTE_REGISTRY` D1 binding to validate the independent remote deployment
+concept. In production, the primary backend database should own this registry
+instead of Cloudflare D1, so release activation and rollback live with the rest
+of the application control plane. Remote artifacts are fetched from the private
+`REMOTE_ARTIFACTS` R2 binding after the same session and permission checks pass.
+`remoteEntry.js` responses use `Cache-Control: no-store`; other release assets
+use private immutable caching after authorization.
 
-Until R2 is wired in Step 4, `/remote-assets/*` validates the stub session and
-remote permission, then returns `501` for authorized known release assets.
-Unauthenticated requests return `401`, missing permissions return `403`, and
-unknown releases or files return `404`.
+The Worker supports a production session validation hook via
+`SESSION_VALIDATION_URL`. Until a real backend session endpoint is configured,
+local development uses the demo bearer tokens from the mock auth client and sets
+a temporary HTTP-only cookie for same-origin remote asset requests.
+
+For local Worker smoke checks:
+
+```bash
+pnpm nx build shell
+CI=1 pnpm exec wrangler d1 migrations apply REMOTE_REGISTRY --local
+
+REMOTE_ASSET_BASE=/remote-assets/product-config/releases/2026.06.08-step4/ \
+pnpm nx build product-config --skip-nx-cache
+
+REMOTE_ASSET_BASE=/remote-assets/underwriting/releases/2026.06.08-step4/ \
+pnpm nx build underwriting --skip-nx-cache
+
+for app in product-config underwriting; do
+  prefix="remotes/$app/releases/2026.06.08-step4"
+  while IFS= read -r file; do
+    relative=${file#dist/apps/$app/}
+    pnpm exec wrangler r2 object put \
+      "ginja-ai-prototype-remote-artifacts/$prefix/$relative" \
+      --local \
+      --file "$file" \
+      --force
+  done < <(find "dist/apps/$app" -type f)
+done
+
+pnpm dev:worker
+```
+
+The seeded D1 release version is `2026.06.08-step4`. This D1 registry is only a
+concept-validation stand-in for the production backend-owned registry.
+
+Step 5 release automation is available through these scripts:
+
+```bash
+pnpm cf:release:remote product-config --local --activate
+pnpm cf:smoke:remote product-config <version> --url http://localhost:8787
+pnpm cf:rollback:remote product-config <previous-version> --local
+```
+
+Use `--remote` instead of `--local` for deployed Cloudflare D1/R2 resources.
+`cf:release:remote` builds the remote with an immutable asset base, uploads
+artifacts to R2, registers the release as available in D1, optionally smoke
+checks it through the protected gateway, and optionally activates it. The
+rollback command is intentionally a validated active-pointer update; it does not
+rebuild or redeploy the shell or other remotes.
+
+## Cloudflare Prototype Deployment
+
+Run these from the repository root after installing dependencies and logging in
+with Wrangler:
+
+```bash
+pnpm exec wrangler login
+pnpm exec wrangler whoami
+```
+
+Create the private remote artifact bucket and D1 registry database:
+
+```bash
+pnpm exec wrangler r2 bucket create ginja-ai-prototype-remote-artifacts
+pnpm exec wrangler d1 create ginja-ai-prototype-remote-registry
+```
+
+Copy the `database_id` printed by `wrangler d1 create` into the
+`REMOTE_REGISTRY` binding in `wrangler.toml`. The R2 bucket name is already
+configured there.
+
+Apply the registry schema and seed data to the remote D1 database:
+
+```bash
+pnpm cf:migrate:remote-registry
+```
+
+Build and deploy the shell Worker with Workers Static Assets:
+
+```bash
+pnpm cf:deploy:shell
+```
+
+Set the deployed Worker origin from the Wrangler output:
+
+```bash
+export WORKER_URL="https://<your-worker-origin>"
+```
+
+Release and activate each remote independently:
+
+```bash
+pnpm cf:release:remote product-config --remote --activate --smoke-url "$WORKER_URL"
+pnpm cf:release:remote underwriting --remote --activate --smoke-url "$WORKER_URL"
+```
+
+Rollback only changes the active D1 pointer for the selected remote:
+
+```bash
+pnpm cf:rollback:remote product-config <previous-version> --remote
+pnpm cf:smoke:remote product-config <previous-version> --url "$WORKER_URL"
+```
+
+For this prototype, the deployed Worker still accepts the demo bearer tokens and
+sets a temporary same-origin session cookie after `/api/runtime/remotes`. The
+browser login flow uses those same demo tokens, so the deployed prototype can be
+validated before a real `SESSION_VALIDATION_URL` is configured.
 
 ## Production Build
 
