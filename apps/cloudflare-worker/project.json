@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "cloudflare-worker",
+  "projectType": "application",
+  "sourceRoot": "apps/cloudflare-worker/src",
+  "tags": ["type:app-shell", "scope:shell"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/cloudflare-worker/tsconfig.json --noEmit"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "wrangler dev"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/cloudflare-worker/tsconfig.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"apps/cloudflare-worker/**/*.{ts,tsx,js,jsx}\""
+      }
+    }
+  }
+}

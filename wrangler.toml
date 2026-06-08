@@ -1,0 +1,15 @@
+"$schema" = "./node_modules/wrangler/config-schema.json"
+
+name = "ginja-ai-prototype-shell"
+main = "apps/cloudflare-worker/src/index.ts"
+compatibility_date = "2026-06-08"
+
+[assets]
+directory = "./dist/apps/shell"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/remote-assets/*"]
+
+[vars]
+PRODUCT_CONFIG_REMOTE_VERSION = "2026.06.08-step3"
+UNDERWRITING_REMOTE_VERSION = "2026.06.08-step3"

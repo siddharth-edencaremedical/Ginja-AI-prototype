@@ -81,6 +81,16 @@ Underwriting:   http://localhost:4202
 
 The shell loads each remote's `remoteEntry.js` only after the current user passes that remote's permission gate.
 
+To exercise the Cloudflare Worker skeleton locally, build the shell static
+assets first and then start Wrangler:
+
+```bash
+pnpm nx build shell
+pnpm dev:worker
+```
+
+Wrangler serves the shell and stub gateway at `http://localhost:8787`.
+
 ## Demo Login
 
 All demo personas use the same password:
@@ -292,6 +302,9 @@ pnpm dev:shell
 pnpm dev:product-config
 pnpm dev:underwriting
 
+# Start Cloudflare Worker skeleton after building the shell
+pnpm dev:worker
+
 # Build all projects
 pnpm build
 
@@ -310,6 +323,23 @@ pnpm nx lint auth
 ```
 
 Tests are not configured yet. Current validation is build, typecheck, lint, and manual browser verification.
+
+## Cloudflare Worker Skeleton
+
+The Step 3 Cloudflare runtime lives in `apps/cloudflare-worker/src/index.ts`,
+with root configuration in `wrangler.toml`. It uses Workers Static Assets to
+serve `dist/apps/shell` through the `ASSETS` binding and runs the Worker first
+for `/api/*` and `/remote-assets/*`.
+
+`GET /api/runtime/remotes` currently uses demo bearer tokens from the mock auth
+client as a stub session source. It returns registry-shaped JSON only for
+remotes allowed by the demo persona and sets a temporary HTTP-only cookie for
+same-origin remote asset requests.
+
+Until R2 is wired in Step 4, `/remote-assets/*` validates the stub session and
+remote permission, then returns `501` for authorized known release assets.
+Unauthenticated requests return `401`, missing permissions return `403`, and
+unknown releases or files return `404`.
 
 ## Production Build
 
