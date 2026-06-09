@@ -10,7 +10,7 @@ import { UserPlusIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const routeBasePath = "/underwriting";
-
+ 
 export function UnderwritingModuleLayout() {
   const location = useLocation();
   const isShellMounted = location.pathname.startsWith(routeBasePath);
@@ -19,7 +19,7 @@ export function UnderwritingModuleLayout() {
   const activeTab = location.pathname.endsWith("/cases") ? "cases" : "queue";
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
           <div className="mb-2.5 flex flex-wrap items-center gap-2">
