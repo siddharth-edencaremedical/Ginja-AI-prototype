@@ -6,7 +6,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@ginja/design-system";
-import { PlusIcon, SlidersHorizontalIcon } from "lucide-react";
+import { SlidersHorizontalIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const routeBasePath = "/product-config";
@@ -40,10 +40,6 @@ export function ProductConfigModuleLayout() {
           <Button variant="outline">
             <SlidersHorizontalIcon data-icon="inline-start" />
             Review rules
-          </Button>
-          <Button>
-            <PlusIcon data-icon="inline-start" />
-            New product
           </Button>
         </div>
       </section>
