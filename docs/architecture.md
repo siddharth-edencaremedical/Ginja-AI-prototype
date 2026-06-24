@@ -130,7 +130,7 @@ Remotes are **not** declared in the shell's build-time `moduleFederation.remotes
 
 Instead the shell registers and loads each remote at runtime, gated by permission:
 
-- The shell fetches active module release records from the platform service modules API, then maps known `moduleId` values to local route, permission, and federation metadata.
+- The shell fetches active module release records through the shell Worker, which proxies the platform service modules API with `PLATFORM_SERVICE_TOKEN`, then maps known `moduleId` values to local route, permission, and federation metadata.
 - On session load it evaluates each remote's `requiredPermissions` against the user **before** touching the MF runtime. Only when the gate passes does it call `registerRemotes(...)` then `loadRemote("<name>/manifest")`.
 - A user without a remote's permission never registers it, so the browser makes **zero** requests to that remote's origin — on the home flow and on a direct deep-link to the remote's route (which renders "Access denied").
 

@@ -3,7 +3,6 @@ import type {
   RemoteRegistryItem,
   ShellModuleResponse
 } from "@ginja/shared-types";
-import { getStoredToken } from "@ginja/auth";
 
 export interface KnownRemoteRegistration {
   id: string;
@@ -16,7 +15,7 @@ export interface KnownRemoteRegistration {
   remoteName: string;
 }
 
-const platformServiceBaseUrl = normalizeBaseUrl(__PLATFORM_SERVICE_BASE_URL__);
+const shellModulesPath = "/api/v1/platform/shell/modules";
 
 const claimsRegistration: KnownRemoteRegistration = {
   id: "claims",
@@ -57,20 +56,12 @@ const localDevelopmentRemoteRegistry: RemoteRegistryItem[] = [
 ];
 
 export async function fetchRuntimeRemoteRegistry(): Promise<RemoteRegistryItem[]> {
-  const token = getStoredToken();
   const headers = new Headers({ Accept: "application/json" });
 
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const response = await fetch(
-    `${platformServiceBaseUrl}/api/v1/platform/shell/modules`,
-    {
-      headers,
-      method: "GET"
-    }
-  );
+  const response = await fetch(shellModulesPath, {
+    headers,
+    method: "GET"
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -128,10 +119,6 @@ function toRemoteRegistryItems(
       }
     ];
   });
-}
-
-function normalizeBaseUrl(value: string): string {
-  return value.replace(/\/+$/, "");
 }
 
 function normalizeConfiguredValue(value: string, fallback: string): string {

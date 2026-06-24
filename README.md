@@ -180,33 +180,36 @@ moduleFederation: {
 
 A static `remotes` config would hand every remote URL to the Module Federation runtime up front. That can cause the browser to contact remote origins even when the user should not have access.
 
-Instead, after authentication the shell fetches active module releases from the
-platform service:
+Instead, after authentication the shell fetches active module releases through
+the shell Worker:
 
 ```ts
-GET https://ginja-ai-internal-platform-service.onrender.com/api/v1/platform/shell/modules
+GET /api/v1/platform/shell/modules
 ```
 
-The browser sends the current `@ginja/auth` bearer token. The shell maps the
-returned `ShellModuleResponse[]` records to its local known remote metadata by
-`moduleId`, then registers only known, permitted modules with Module Federation.
-Unknown platform modules are ignored until they have explicit shell routing and
-permission metadata. On localhost, if the platform endpoint is not available,
+The Worker proxies that request to the platform service and sends
+`Authorization: Bearer <PLATFORM_SERVICE_TOKEN>` from its Cloudflare environment.
+The browser never receives that token. The shell maps the returned
+`ShellModuleResponse[]` records to its local known remote metadata by `moduleId`,
+then registers only known, permitted modules with Module Federation. Unknown
+platform modules are ignored until they have explicit shell routing and
+permission metadata. On localhost, if the Worker proxy is not available,
 `apps/shell/src/remote-registry.ts` returns a development fallback registry with
 the current dev remote URLs.
 
 At runtime:
 
 1. The user logs in and the shell receives a session.
-2. The shell calls `GET /api/v1/platform/shell/modules` on the platform service.
-3. If the platform endpoint is absent on localhost, the shell uses the local dev fallback registry.
-4. The shell checks each URL-bearing registry entry with `hasEveryPermission(...)` and feature flag helpers.
-5. If the user is not allowed, the remote state is `blocked`.
-6. Blocked remotes are not passed to `registerRemotes(...)`.
-7. Blocked remotes are not loaded with `loadRemote(...)`.
-8. The browser makes zero requests to that remote's origin, including on direct deep links.
-9. If the user is allowed, the shell registers the remote and loads only its `manifest`.
-10. The manifest is re-checked at render time as defense in depth.
+2. The shell calls `GET /api/v1/platform/shell/modules` on the shell Worker.
+3. The Worker calls the platform service with `PLATFORM_SERVICE_TOKEN`.
+4. If the Worker proxy is absent on localhost, the shell uses the local dev fallback registry.
+5. The shell checks each URL-bearing registry entry with `hasEveryPermission(...)` and feature flag helpers.
+6. If the user is not allowed, the remote state is `blocked`.
+7. Blocked remotes are not passed to `registerRemotes(...)`.
+8. Blocked remotes are not loaded with `loadRemote(...)`.
+9. The browser makes zero requests to that remote's origin, including on direct deep links.
+10. If the user is allowed, the shell registers the remote and loads only its `manifest`.
+11. The manifest is re-checked at render time as defense in depth.
 
 Because the shell must decide before loading a remote, required permissions live in two places:
 
@@ -341,8 +344,15 @@ pnpm exec wrangler whoami
 Build and deploy the shell Worker with Workers Static Assets:
 
 ```bash
+PLATFORM_SERVICE_TOKEN=<token> \
+PLATFORM_SERVICE_BASE_URL=https://ginja-ai-internal-platform-service.onrender.com \
 pnpm cf:deploy:shell
 ```
+
+The deploy helper stores `PLATFORM_SERVICE_TOKEN`, and
+`PLATFORM_SERVICE_BASE_URL` when provided, as Cloudflare Worker secrets after
+deployment. The shell Worker uses those bindings when proxying
+`GET /api/v1/platform/shell/modules` to the platform service.
 
 Publish vertical release artifacts through the platform service:
 

@@ -24,12 +24,36 @@ if (!flags.has("--skip-build")) {
 }
 
 run("pnpm", ["exec", "wrangler", "deploy", "--keep-vars"]);
+syncWorkerSecret("PLATFORM_SERVICE_TOKEN", process.env.PLATFORM_SERVICE_TOKEN, {
+  required: true
+});
+syncWorkerSecret("PLATFORM_SERVICE_BASE_URL", process.env.PLATFORM_SERVICE_BASE_URL);
 
-function run(command, args) {
+function syncWorkerSecret(name, value, options = {}) {
+  const trimmedValue = value?.trim();
+
+  if (!trimmedValue) {
+    if (options.required) {
+      console.warn(
+        `${name} is not set; leaving the existing Cloudflare secret unchanged.`
+      );
+    }
+
+    return;
+  }
+
+  run("pnpm", ["exec", "wrangler", "secret", "put", name], {
+    input: `${trimmedValue}\n`
+  });
+}
+
+function run(command, args, options = {}) {
+  const hasInput = options.input !== undefined;
   const result = spawnSync(command, args, {
     cwd: workspaceRoot,
     env: process.env,
-    stdio: "inherit"
+    input: options.input,
+    stdio: hasInput ? ["pipe", "inherit", "inherit"] : "inherit"
   });
 
   if (result.status !== 0) {
