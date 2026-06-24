@@ -6,40 +6,40 @@ import {
   TabsList,
   TabsTrigger
 } from "@ginja/design-system";
-import { SlidersHorizontalIcon } from "lucide-react";
+import { CircleDollarSignIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
-const routeBasePath = "/product-config";
+const routeBasePath = "/finance";
 
-export function ProductConfigModuleLayout() {
+export function FinanceModuleLayout() {
   const location = useLocation();
   const isShellMounted = location.pathname.startsWith(routeBasePath);
   const rootPath = isShellMounted ? routeBasePath : "/";
-  const productsPath = isShellMounted ? `${routeBasePath}/products` : "/products";
-  const activeTab = location.pathname.endsWith("/products")
-    ? "products"
-    : "overview";
+  const reconciliationPath = isShellMounted
+    ? `${routeBasePath}/reconciliation`
+    : "/reconciliation";
+  const activeTab = location.pathname.endsWith("/reconciliation")
+    ? "reconciliation"
+    : "dashboard";
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
           <div className="mb-2.5 flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">Product operations</Badge>
-            <Badge variant="outline">4 active markets</Badge>
+            <Badge variant="secondary">Finance operations</Badge>
+            <Badge variant="outline">$4.8M in-cycle</Badge>
           </div>
-          <h2 className="m-0 text-2xl font-semibold tracking-tight">
-            Product Config
-          </h2>
+          <h2 className="m-0 text-2xl font-semibold tracking-tight">Finance</h2>
           <p className="m-0 mt-2 text-sm text-muted-foreground">
-            Maintain plan catalogs, market filing status, and version readiness
-            before products move into underwriting workflows.
+            Monitor premium flow, claims reserves, settlement funding, and
+            reconciliation exceptions across the operating ledger.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline">
-            <SlidersHorizontalIcon data-icon="inline-start" />
-            Review rules
+            <CircleDollarSignIcon data-icon="inline-start" />
+            Review ledger
           </Button>
         </div>
       </section>
@@ -47,13 +47,13 @@ export function ProductConfigModuleLayout() {
       <section className="flex flex-col gap-4">
         <Tabs value={activeTab}>
           <TabsList variant="line" className="w-full justify-start">
-            <TabsTrigger value="overview" asChild>
+            <TabsTrigger value="dashboard" asChild>
               <NavLink to={rootPath} end>
-                Overview
+                Dashboard
               </NavLink>
             </TabsTrigger>
-            <TabsTrigger value="products" asChild>
-              <NavLink to={productsPath}>Catalog</NavLink>
+            <TabsTrigger value="reconciliation" asChild>
+              <NavLink to={reconciliationPath}>Reconciliation</NavLink>
             </TabsTrigger>
           </TabsList>
         </Tabs>

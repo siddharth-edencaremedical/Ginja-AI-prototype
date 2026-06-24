@@ -26,7 +26,14 @@ jobs:
       CI: "1"
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      WORKER_URL: ${{ secrets.WORKER_URL }}
+      PLATFORM_SERVICE_TOKEN: ${{ secrets.PLATFORM_SERVICE_TOKEN }}
+      PLATFORM_SERVICE_BASE_URL: ${{ vars.PLATFORM_SERVICE_BASE_URL || 'https://ginja-ai-internal-platform-service.onrender.com' }}
+      CLAIMS_MODULE_ID: ${{ vars.CLAIMS_MODULE_ID || secrets.CLAIMS_MODULE_ID }}
+      FINANCE_MODULE_ID: ${{ vars.FINANCE_MODULE_ID || secrets.FINANCE_MODULE_ID }}
+      CLAIMS_MAJOR_VERSION: ${{ vars.CLAIMS_MAJOR_VERSION || secrets.CLAIMS_MAJOR_VERSION }}
+      CLAIMS_MINOR_VERSION: ${{ vars.CLAIMS_MINOR_VERSION || secrets.CLAIMS_MINOR_VERSION }}
+      FINANCE_MAJOR_VERSION: ${{ vars.FINANCE_MAJOR_VERSION || secrets.FINANCE_MAJOR_VERSION }}
+      FINANCE_MINOR_VERSION: ${{ vars.FINANCE_MINOR_VERSION || secrets.FINANCE_MINOR_VERSION }}
 
     steps:
       - name: Checkout
@@ -74,7 +81,7 @@ jobs:
             echo EOF
           } >> "$GITHUB_ENV"
 
-      - name: Detect infra-only changes
+      - name: Detect worker config changes
         shell: bash
         run: |
           changed_files="$(git diff --name-only "${{ steps.range.outputs.base }}" "${{ steps.range.outputs.head }}")"
@@ -84,20 +91,12 @@ jobs:
             worker_config_changed=true
           fi
 
-          migrations_changed=false
-          if printf '%s\n' "$changed_files" | grep -Eq '^migrations/.+\.sql$'; then
-            migrations_changed=true
-          fi
-
-          {
-            echo "WORKER_CONFIG_CHANGED=$worker_config_changed" >> "$GITHUB_ENV"
-            echo "MIGRATIONS_CHANGED=$migrations_changed" >> "$GITHUB_ENV"
-          }
+          echo "WORKER_CONFIG_CHANGED=$worker_config_changed" >> "$GITHUB_ENV"
 
       - name: Verify deployment environment
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$WORKER_URL" ]; then
-            echo "CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and WORKER_URL are required."
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required."
             exit 1
           fi
 
@@ -124,19 +123,6 @@ jobs:
             echo "Shell worker unchanged; skipping worker deploy."
           fi
 
-      - name: Apply remote registry migrations
-        shell: bash
-        run: |
-          has_app() {
-            printf '%s\n' "$AFFECTED_APPS" | grep -qx "$1"
-          }
-
-          if has_app product-config || has_app underwriting || [ "$MIGRATIONS_CHANGED" = "true" ]; then
-            pnpm cf:migrate:remote-registry
-          else
-            echo "No remote releases affected; skipping remote registry migration."
-          fi
-
       - name: Release affected remotes
         shell: bash
         run: |
@@ -144,14 +130,14 @@ jobs:
             printf '%s\n' "$AFFECTED_APPS" | grep -qx "$1"
           }
 
-          if has_app product-config; then
-            pnpm cf:release:remote product-config --remote --activate --smoke-url "$WORKER_URL" --skip-checks
+          if has_app claims; then
+            pnpm platform:release:remote claims
           fi
 
-          if has_app underwriting; then
-            pnpm cf:release:remote underwriting --remote --activate --smoke-url "$WORKER_URL" --skip-checks
+          if has_app finance; then
+            pnpm platform:release:remote finance
           fi
 
-          if ! has_app product-config && ! has_app underwriting; then
+          if ! has_app claims && ! has_app finance; then
             echo "No remotes need release."
           fi

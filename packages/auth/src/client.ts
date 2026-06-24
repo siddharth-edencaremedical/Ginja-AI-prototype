@@ -39,43 +39,39 @@ export const DEMO_PERSONAS: DemoPersona[] = [
         name: "Demo Admin",
         email: "admin@example.ginja.ai",
         roles: ["platform-admin"],
-        permissions: [
-          "product-config:view",
-          "underwriting:view",
-          "settings:view"
-        ]
+        permissions: ["claims:view", "finance:view", "settings:view"]
       },
       tenant: GINJA_AI_TENANT
     }
   },
   {
-    label: "Underwriter",
-    email: "underwriter@example.ginja.ai",
-    token: "mock-token-underwriter",
+    label: "Claims Lead",
+    email: "claims@example.ginja.ai",
+    token: "mock-token-claims-lead",
     session: {
       authenticated: true,
       user: {
-        id: "user-demo-underwriter",
-        name: "Dana Underwriter",
-        email: "underwriter@example.ginja.ai",
-        roles: ["underwriter"],
-        permissions: ["underwriting:view"]
+        id: "user-demo-claims-lead",
+        name: "Maya Claims",
+        email: "claims@example.ginja.ai",
+        roles: ["claims-lead"],
+        permissions: ["claims:view"]
       },
       tenant: GINJA_AI_TENANT
     }
   },
   {
-    label: "Product Manager",
-    email: "product@example.ginja.ai",
-    token: "mock-token-product-manager",
+    label: "Finance Analyst",
+    email: "finance@example.ginja.ai",
+    token: "mock-token-finance-analyst",
     session: {
       authenticated: true,
       user: {
-        id: "user-demo-product-manager",
-        name: "Priya Product",
-        email: "product@example.ginja.ai",
-        roles: ["product-manager"],
-        permissions: ["product-config:view"]
+        id: "user-demo-finance-analyst",
+        name: "Nina Finance",
+        email: "finance@example.ginja.ai",
+        roles: ["finance-analyst"],
+        permissions: ["finance:view"]
       },
       tenant: GINJA_AI_TENANT
     }

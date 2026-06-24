@@ -40,9 +40,8 @@ Vertical modules are business-facing insurance domains.
 
 Initial examples:
 
-- Product Config
-- Underwriting
 - Claims
+- Finance
 - Policy Administration
 - Billing
 - Member Management
@@ -80,8 +79,8 @@ The remotes own their business areas.
 
 ```txt
 Shell
-├── loads Product Config
-└── loads Underwriting
+├── loads Claims
+└── loads Finance
 ```
 
 ---
@@ -93,8 +92,8 @@ The prototype will be organized as a monorepo.
 ```txt
 apps/
   shell/
-  product-config/
-  underwriting/
+  claims/
+  finance/
 
 packages/
   design-system/

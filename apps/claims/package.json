@@ -1,5 +1,5 @@
 {
-  "name": "@ginja/product-config",
+  "name": "@ginja/claims",
   "private": true,
   "type": "module",
   "dependencies": {

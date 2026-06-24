@@ -5,8 +5,8 @@
 
 @source "../../";
 @source "../../../apps/shell/src";
-@source "../../../apps/product-config/src";
-@source "../../../apps/underwriting/src";
+@source "../../../apps/claims/src";
+@source "../../../apps/finance/src";
 
 @custom-variant dark (&:is(.dark *));
 

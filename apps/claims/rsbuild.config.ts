@@ -8,45 +8,6 @@ import { fileURLToPath } from "node:url";
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(appRoot, "../..");
 const publicDir = path.resolve(workspaceRoot, "public");
-const remoteAssetPrefixPattern =
-  /^(?<origin>(?:https?:)?\/\/[^/]+)?(?<path>\/remote-assets\/(?<remoteId>[^/]+)\/releases\/(?<version>[^/]+)\/)$/;
-
-function getRemoteAssetPrefix(remoteId: string): string {
-  const remoteAssetBase = process.env.REMOTE_ASSET_BASE;
-
-  if (!remoteAssetBase) {
-    return "/";
-  }
-
-  const match = remoteAssetBase.match(remoteAssetPrefixPattern);
-
-  if (!match?.groups) {
-    throw new Error(
-      `REMOTE_ASSET_BASE must be an immutable release base like /remote-assets/${remoteId}/releases/<version>/.`
-    );
-  }
-
-  const matchedRemoteId = match.groups.remoteId;
-  const matchedVersion = match.groups.version;
-
-  if (!matchedRemoteId || !matchedVersion) {
-    throw new Error(
-      `REMOTE_ASSET_BASE must include a remote id and release version for "${remoteId}".`
-    );
-  }
-
-  if (matchedRemoteId !== remoteId) {
-    throw new Error(
-      `REMOTE_ASSET_BASE remote id "${matchedRemoteId}" does not match "${remoteId}".`
-    );
-  }
-
-  if (matchedVersion.trim().length === 0) {
-    throw new Error("REMOTE_ASSET_BASE must include a non-empty release version.");
-  }
-
-  return remoteAssetBase;
-}
 
 function getRemoteBuildDefines(): Record<string, string> {
   return {
@@ -157,21 +118,21 @@ export default defineConfig(({ command }) => ({
     template: "./index.html"
   },
   output: {
-    assetPrefix: getRemoteAssetPrefix("underwriting"),
+    assetPrefix: "auto",
     cleanDistPath: true,
     distPath: {
-      root: path.resolve(workspaceRoot, "dist/apps/underwriting")
+      root: path.resolve(workspaceRoot, "dist/apps/claims")
     }
   },
   server: {
     publicDir: {
       name: publicDir
     },
-    port: 4202
+    port: 4201
   },
   moduleFederation: {
     options: {
-      name: "underwriting",
+      name: "claims",
       filename: "remoteEntry.js",
       exposes: {
         "./manifest": "./src/remote/manifest.tsx"

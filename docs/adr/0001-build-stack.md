@@ -38,8 +38,8 @@ Rsbuild/Rspack is the frontend application build path for both the shell and rem
 The scaffold should include:
 
 - `apps/shell`
-- `apps/product-config`
-- `apps/underwriting`
+- `apps/claims`
+- `apps/finance`
 - Platform packages under `packages/`
 - Shared React and runtime dependency versions
 - Nx tags and dependency constraints matching `docs/module-boundaries.md`

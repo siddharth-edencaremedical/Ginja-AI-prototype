@@ -15,12 +15,12 @@ const boundaryRules = [
     onlyDependOnLibsWithTags: ["type:platform"]
   },
   {
-    sourceTag: "scope:product-config",
-    notDependOnLibsWithTags: ["scope:underwriting"]
+    sourceTag: "scope:claims",
+    notDependOnLibsWithTags: ["scope:finance"]
   },
   {
-    sourceTag: "scope:underwriting",
-    notDependOnLibsWithTags: ["scope:product-config"]
+    sourceTag: "scope:finance",
+    notDependOnLibsWithTags: ["scope:claims"]
   },
   {
     sourceTag: "type:platform",

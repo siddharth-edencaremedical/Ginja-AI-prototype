@@ -6,38 +6,40 @@ import {
   TabsList,
   TabsTrigger
 } from "@ginja/design-system";
-import { UserPlusIcon } from "lucide-react";
+import { ClipboardCheckIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
-const routeBasePath = "/underwriting";
- 
-export function UnderwritingModuleLayout() {
+const routeBasePath = "/claims";
+
+export function ClaimsModuleLayout() {
   const location = useLocation();
   const isShellMounted = location.pathname.startsWith(routeBasePath);
   const rootPath = isShellMounted ? routeBasePath : "/";
-  const casesPath = isShellMounted ? `${routeBasePath}/cases` : "/cases";
-  const activeTab = location.pathname.endsWith("/cases") ? "cases" : "queue";
+  const workbenchPath = isShellMounted
+    ? `${routeBasePath}/workbench`
+    : "/workbench";
+  const activeTab = location.pathname.endsWith("/workbench")
+    ? "workbench"
+    : "overview";
 
   return (
-     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
           <div className="mb-2.5 flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">Underwriting operations</Badge>
-            <Badge variant="outline">12 open cases</Badge>
+            <Badge variant="secondary">Claims operations</Badge>
+            <Badge variant="outline">18 active files</Badge>
           </div>
-          <h2 className="m-0 text-2xl font-semibold tracking-tight">
-            Underwriting
-          </h2>
+          <h2 className="m-0 text-2xl font-semibold tracking-tight">Claims</h2>
           <p className="m-0 mt-2 text-sm text-muted-foreground">
-            Manage submission intake, evidence completeness, risk tiering, and
-            decision readiness across the active queue.
+            Track intake, adjudication, reserves, and settlement readiness
+            across active claim files.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button>
-            <UserPlusIcon data-icon="inline-start" />
-            Assign case
+            <ClipboardCheckIcon data-icon="inline-start" />
+            Assign review
           </Button>
         </div>
       </section>
@@ -45,13 +47,13 @@ export function UnderwritingModuleLayout() {
       <section className="flex flex-col gap-4">
         <Tabs value={activeTab}>
           <TabsList variant="line" className="w-full justify-start">
-            <TabsTrigger value="queue" asChild>
+            <TabsTrigger value="overview" asChild>
               <NavLink to={rootPath} end>
-                Queue
+                Overview
               </NavLink>
             </TabsTrigger>
-            <TabsTrigger value="cases" asChild>
-              <NavLink to={casesPath}>Review</NavLink>
+            <TabsTrigger value="workbench" asChild>
+              <NavLink to={workbenchPath}>Workbench</NavLink>
             </TabsTrigger>
           </TabsList>
         </Tabs>

@@ -9,8 +9,8 @@ export interface FeatureFlagsProviderProps {
 }
 
 export const defaultFeatureFlags: FeatureFlagState = {
-  "product-config": true,
-  underwriting: true
+  claims: true,
+  finance: true
 };
 
 const FeatureFlagsContext =

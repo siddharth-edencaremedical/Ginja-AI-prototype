@@ -9,7 +9,7 @@ This document defines ownership and dependency rules for the prototype. The goal
 The workspace should use these categories:
 
 - Shell app: `apps/shell`
-- Vertical apps: `apps/product-config`, `apps/underwriting`
+- Vertical apps: `apps/claims`, `apps/finance`
 - Horizontal packages: packages under `packages/`
 
 Recommended Nx tags:
@@ -19,8 +19,8 @@ type:app-shell
 type:vertical
 type:platform
 scope:shell
-scope:product-config
-scope:underwriting
+scope:claims
+scope:finance
 scope:design-system
 scope:shared-types
 scope:auth
@@ -54,9 +54,9 @@ Examples:
 ```txt
 apps/shell -> packages/design-system
 apps/shell -> packages/auth
-apps/product-config -> packages/api-client
-apps/product-config -> packages/shared-types
-apps/underwriting -> packages/permissions
+apps/claims -> packages/api-client
+apps/claims -> packages/shared-types
+apps/finance -> packages/permissions
 packages/api-client -> packages/auth
 ```
 
@@ -67,10 +67,10 @@ Vertical modules must not directly depend on other vertical modules.
 Disallowed examples:
 
 ```txt
-apps/product-config -> apps/underwriting
-apps/underwriting -> apps/product-config
-packages/shared-types -> apps/product-config
-packages/design-system -> apps/underwriting
+apps/claims -> apps/finance
+apps/finance -> apps/claims
+packages/shared-types -> apps/claims
+packages/design-system -> apps/finance
 ```
 
 Avoid these coupling patterns:
@@ -88,8 +88,8 @@ Nx dependency rules should enforce the architecture:
 - `type:app-shell` can depend on `type:platform`.
 - `type:vertical` can depend on `type:platform`.
 - `type:platform` can depend only on `type:platform`, unless an exception is recorded in an ADR.
-- `scope:product-config` cannot depend on `scope:underwriting`.
-- `scope:underwriting` cannot depend on `scope:product-config`.
+- `scope:claims` cannot depend on `scope:finance`.
+- `scope:finance` cannot depend on `scope:claims`.
 - Platform packages cannot depend on app scopes.
 
 Module Federation configuration is the integration point between the shell and remote apps. Shell code should not statically import from remote app source. Compile-time types for the remote manifest should come from a horizontal package such as `shared-types`.
@@ -117,8 +117,8 @@ Allowed in `design-system`:
 
 Not allowed in `design-system`:
 
-- Product configuration forms with business rules
-- Underwriting case review components
+- Claims adjudication forms with business rules
+- Finance reconciliation review components
 - Claims, billing, member, or policy workflow screens
 - Domain-specific copy or validation logic
 

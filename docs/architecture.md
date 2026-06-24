@@ -13,8 +13,8 @@ The prototype uses a monorepo with three major layers:
 ```txt
 apps/
   shell/
-  product-config/
-  underwriting/
+  claims/
+  finance/
 
 packages/
   design-system/
@@ -54,10 +54,10 @@ The shell should not own vertical business workflows. Its job is to compose modu
 
 Initial vertical modules:
 
-- Product Config
-- Underwriting
+- Claims
+- Finance
 
-Future vertical modules may include Claims, Policy Administration, Billing, and Member Management.
+Future vertical modules may include Policy Administration, Billing, and Member Management.
 
 Each vertical module owns:
 
@@ -130,19 +130,19 @@ Remotes are **not** declared in the shell's build-time `moduleFederation.remotes
 
 Instead the shell registers and loads each remote at runtime, gated by permission:
 
-- The shell holds a registry of `{ remoteName, remoteEntryUrl, requiredPermissions }` per remote (URLs injected via `source.define` from environment config).
+- The shell fetches active module release records from the platform service modules API, then maps known `moduleId` values to local route, permission, and federation metadata.
 - On session load it evaluates each remote's `requiredPermissions` against the user **before** touching the MF runtime. Only when the gate passes does it call `registerRemotes(...)` then `loadRemote("<name>/manifest")`.
 - A user without a remote's permission never registers it, so the browser makes **zero** requests to that remote's origin — on the home flow and on a direct deep-link to the remote's route (which renders "Access denied").
 
-`requiredPermissions` therefore lives in two synchronized places: the shell registry (to gate loading) and the remote manifest (re-checked at render as defense-in-depth).
+`requiredPermissions` therefore lives in two synchronized places: the shell's known remote metadata (to gate loading) and the remote manifest (re-checked at render as defense-in-depth).
 
 ## Routing
 
 The shell owns top-level route registration:
 
 - `/` is owned by the shell.
-- `/product-config/*` is owned by the Product Config remote.
-- `/underwriting/*` is owned by the Underwriting remote.
+- `/claims/*` is owned by the Claims remote.
+- `/finance/*` is owned by the Finance remote.
 - `/settings/*` is owned by the shell or a future platform module.
 
 Vertical modules own nested route objects under their assigned route prefix. Remote navigation paths should resolve under the remote's `routeBasePath`.
@@ -170,8 +170,8 @@ The prototype uses mocked APIs with realistic insurance entities:
 - Tenants or organizations
 - Users and roles
 - Permissions
-- Products
-- Underwriting cases
+- Claims
+- Finance ledger items
 - Policy/member references where useful
 
 Mocking should live behind `api-client` so modules use the same access pattern they would use with real APIs later.

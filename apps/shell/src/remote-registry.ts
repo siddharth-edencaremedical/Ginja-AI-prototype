@@ -1,13 +1,13 @@
 import type {
+  PlatformApiEnvelope,
   RemoteRegistryItem,
-  RemoteRegistryResponse
+  ShellModuleResponse
 } from "@ginja/shared-types";
-import { REMOTE_MODULE_CONTRACT_VERSION } from "@ginja/shared-types";
-
-import { apiClient } from "./api-client";
+import { getStoredToken } from "@ginja/auth";
 
 export interface KnownRemoteRegistration {
   id: string;
+  moduleId: string;
   displayName: string;
   routeBasePath: `/${string}`;
   scopeClassName: string;
@@ -16,56 +16,76 @@ export interface KnownRemoteRegistration {
   remoteName: string;
 }
 
-const productConfigRegistration: KnownRemoteRegistration = {
-  id: "product-config",
-  displayName: "Product Config",
-  routeBasePath: "/product-config",
-  scopeClassName: "product-config-remote",
-  requiredPermissions: ["product-config:view"],
-  remoteName: "product_config"
+const platformServiceBaseUrl = normalizeBaseUrl(__PLATFORM_SERVICE_BASE_URL__);
+
+const claimsRegistration: KnownRemoteRegistration = {
+  id: "claims",
+  moduleId: normalizeConfiguredValue(__CLAIMS_MODULE_ID__, "claims"),
+  displayName: "Claims",
+  routeBasePath: "/claims",
+  scopeClassName: "claims-remote",
+  requiredPermissions: ["claims:view"],
+  remoteName: "claims"
 };
 
-const underwritingRegistration: KnownRemoteRegistration = {
-  id: "underwriting",
-  displayName: "Underwriting",
-  routeBasePath: "/underwriting",
-  scopeClassName: "underwriting-remote",
-  requiredPermissions: ["underwriting:view"],
-  remoteName: "underwriting"
+const financeRegistration: KnownRemoteRegistration = {
+  id: "finance",
+  moduleId: normalizeConfiguredValue(__FINANCE_MODULE_ID__, "finance"),
+  displayName: "Finance",
+  routeBasePath: "/finance",
+  scopeClassName: "finance-remote",
+  requiredPermissions: ["finance:view"],
+  remoteName: "finance"
 };
 
 export const knownRemoteRegistrations: KnownRemoteRegistration[] = [
-  productConfigRegistration,
-  underwritingRegistration
+  claimsRegistration,
+  financeRegistration
 ];
 
 const localDevelopmentRemoteRegistry: RemoteRegistryItem[] = [
   {
-    ...productConfigRegistration,
+    ...claimsRegistration,
     remoteEntryUrl: "http://localhost:4201/remoteEntry.js",
-    version: "local-dev",
-    contractVersion: REMOTE_MODULE_CONTRACT_VERSION,
-    builtAt: "1970-01-01T00:00:00.000Z",
-    gitSha: "local-dev"
+    version: "local-dev"
   },
   {
-    ...underwritingRegistration,
+    ...financeRegistration,
     remoteEntryUrl: "http://localhost:4202/remoteEntry.js",
-    version: "local-dev",
-    contractVersion: REMOTE_MODULE_CONTRACT_VERSION,
-    builtAt: "1970-01-01T00:00:00.000Z",
-    gitSha: "local-dev"
+    version: "local-dev"
   }
 ];
 
 export async function fetchRuntimeRemoteRegistry(): Promise<RemoteRegistryItem[]> {
-  const response = await apiClient.get<RemoteRegistryResponse>("/runtime/remotes");
+  const token = getStoredToken();
+  const headers = new Headers({ Accept: "application/json" });
 
-  if (!Array.isArray(response.remotes)) {
-    throw new Error("Runtime remote registry response did not include remotes.");
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
-  return response.remotes;
+  const response = await fetch(
+    `${platformServiceBaseUrl}/api/v1/platform/shell/modules`,
+    {
+      headers,
+      method: "GET"
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Platform module registry returned ${response.status} ${response.statusText}.`
+    );
+  }
+
+  const envelope =
+    (await response.json()) as PlatformApiEnvelope<ShellModuleResponse[]>;
+
+  if (!envelope.success || !Array.isArray(envelope.result)) {
+    throw new Error("Platform module registry response did not include modules.");
+  }
+
+  return toRemoteRegistryItems(envelope.result);
 }
 
 export function getLocalDevelopmentRemoteRegistry(): RemoteRegistryItem[] {
@@ -78,4 +98,44 @@ export function isLocalDevelopmentHost(): boolean {
   }
 
   return ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+}
+
+function toRemoteRegistryItems(
+  modules: ShellModuleResponse[]
+): RemoteRegistryItem[] {
+  const knownRemoteByModuleId = new Map(
+    knownRemoteRegistrations.map((registration) => [
+      registration.moduleId,
+      registration
+    ])
+  );
+
+  return modules.flatMap((module) => {
+    const knownRegistration = knownRemoteByModuleId.get(module.moduleId);
+
+    if (!knownRegistration || !module.entryAssetUrl) {
+      return [];
+    }
+
+    return [
+      {
+        ...knownRegistration,
+        code: module.code,
+        displayName: module.name || knownRegistration.displayName,
+        remoteEntryUrl: module.entryAssetUrl,
+        version: module.version,
+        assetBaseUrl: module.assetBaseUrl
+      }
+    ];
+  });
+}
+
+function normalizeBaseUrl(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
+function normalizeConfiguredValue(value: string, fallback: string): string {
+  const normalized = value.trim();
+
+  return normalized.length > 0 ? normalized : fallback;
 }

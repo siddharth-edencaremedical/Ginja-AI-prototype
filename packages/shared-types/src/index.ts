@@ -2,6 +2,29 @@ import type { RouteObject } from "react-router-dom";
 
 export const REMOTE_MODULE_CONTRACT_VERSION = 1;
 
+export interface PlatformApiEnvelope<T> {
+  error_details: unknown | null;
+  message: string | null;
+  result: T;
+  status: number;
+  success: boolean;
+}
+
+export interface ShellModuleResponse {
+  moduleId: string;
+  code: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  url: string | null;
+  ownerTeam: string | null;
+  version: string;
+  entryAssetUrl: string;
+  assetBaseUrl: string;
+  metadata: Record<string, unknown>;
+  activeRelease: Record<string, unknown> | null;
+}
+
 export interface RemoteModuleManifest {
   id: string;
   displayName: string;
@@ -25,15 +48,10 @@ export interface RemoteRegistryItem {
   remoteEntryUrl: string;
   requiredPermissions: string[];
   featureFlags?: string[];
+  moduleId: string;
+  code?: string;
   version: string;
-  contractVersion: number;
-  minShellVersion?: string;
-  builtAt: string;
-  gitSha: string;
-}
-
-export interface RemoteRegistryResponse {
-  remotes: RemoteRegistryItem[];
+  assetBaseUrl?: string;
 }
 
 export interface RemoteNavigationItem {

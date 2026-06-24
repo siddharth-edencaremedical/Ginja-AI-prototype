@@ -1,35 +1,35 @@
 {
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "product-config",
+  "name": "finance",
   "projectType": "application",
-  "sourceRoot": "apps/product-config/src",
-  "tags": ["type:vertical", "scope:product-config"],
+  "sourceRoot": "apps/finance/src",
+  "tags": ["type:vertical", "scope:finance"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{workspaceRoot}/dist/apps/product-config"],
+      "outputs": ["{workspaceRoot}/dist/apps/finance"],
       "options": {
-        "cwd": "apps/product-config",
+        "cwd": "apps/finance",
         "command": "rsbuild build"
       }
     },
     "serve": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/product-config",
+        "cwd": "apps/finance",
         "command": "rsbuild dev"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p apps/product-config/tsconfig.json --noEmit"
+        "command": "tsc -p apps/finance/tsconfig.json --noEmit"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint \"apps/product-config/**/*.{ts,tsx,js,jsx}\""
+        "command": "eslint \"apps/finance/**/*.{ts,tsx,js,jsx}\""
       }
     }
   }

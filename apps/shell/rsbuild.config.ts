@@ -7,6 +7,18 @@ import { fileURLToPath } from "node:url";
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(appRoot, "../..");
 const publicDir = path.resolve(workspaceRoot, "public");
+const defaultPlatformServiceBaseUrl =
+  "https://ginja-ai-internal-platform-service.onrender.com";
+
+function getShellDefines(): Record<string, string> {
+  return {
+    __PLATFORM_SERVICE_BASE_URL__: JSON.stringify(
+      process.env.PLATFORM_SERVICE_BASE_URL ?? defaultPlatformServiceBaseUrl
+    ),
+    __CLAIMS_MODULE_ID__: JSON.stringify(process.env.CLAIMS_MODULE_ID ?? ""),
+    __FINANCE_MODULE_ID__: JSON.stringify(process.env.FINANCE_MODULE_ID ?? "")
+  };
+}
 
 const alias = {
   "@ginja/api-client": path.resolve(
@@ -76,6 +88,7 @@ const shared = {
 export default defineConfig({
   plugins: [pluginReact(), pluginTailwindcss()],
   source: {
+    define: getShellDefines(),
     entry: {
       index: "./src/main.tsx"
     }

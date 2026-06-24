@@ -1,5 +1,5 @@
 {
-  "name": "@ginja/underwriting",
+  "name": "@ginja/finance",
   "private": true,
   "type": "module",
   "dependencies": {

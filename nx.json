@@ -20,12 +20,15 @@
     "sharedGlobals": [
       "{workspaceRoot}/tsconfig.base.json"
     ],
-    "remoteUrls": [
+    "runtimeConfig": [
       {
-        "env": "PRODUCT_CONFIG_REMOTE_URL"
+        "env": "PLATFORM_SERVICE_BASE_URL"
       },
       {
-        "env": "UNDERWRITING_REMOTE_URL"
+        "env": "CLAIMS_MODULE_ID"
+      },
+      {
+        "env": "FINANCE_MODULE_ID"
       }
     ]
   },
@@ -38,7 +41,7 @@
       "inputs": [
         "production",
         "^production",
-        "remoteUrls"
+        "runtimeConfig"
       ]
     },
     "typecheck": {

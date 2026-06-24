@@ -8,17 +8,3 @@ compatibility_date = "2026-06-08"
 directory = "./dist/apps/shell"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = ["/api/*", "/remote-assets/*"]
-
-[vars]
-REGISTRY_ENVIRONMENT = "development"
-
-[[r2_buckets]]
-binding = "REMOTE_ARTIFACTS"
-bucket_name = "ginja-ai-prototype-remote-artifacts"
-
-[[d1_databases]]
-binding = "REMOTE_REGISTRY"
-database_name = "ginja-ai-prototype-remote-registry"
-database_id = "40af41e9-e69f-40a8-a152-094c86ff5351"
-migrations_dir = "migrations"

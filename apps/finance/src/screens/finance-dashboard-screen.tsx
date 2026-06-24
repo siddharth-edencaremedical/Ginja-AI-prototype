@@ -13,52 +13,52 @@ import {
 } from "@ginja/design-system";
 import { CheckCircle2Icon, Clock3Icon } from "lucide-react";
 
-const marketReadiness = [
-  { label: "Texas HMO", progress: 94, status: "Ready" },
-  { label: "Florida PPO", progress: 72, status: "Review" },
-  { label: "California EPO", progress: 58, status: "Draft" }
+const cashFlow = [
+  { label: "Premium receivables", progress: 86, status: "On track" },
+  { label: "Claims funding", progress: 64, status: "Review" },
+  { label: "Reserve adjustments", progress: 42, status: "Queued" }
 ];
 
-const configurationLanes = [
+const financeLanes = [
   {
-    label: "Benefit design",
-    owner: "Product",
-    status: "Complete",
-    detail: "Core plan, riders, and coverage tiers are approved."
+    label: "Premium posting",
+    owner: "Billing",
+    status: "On track",
+    detail: "Batch posting is current through the latest carrier feed."
   },
   {
-    label: "Pricing tables",
-    owner: "Actuarial",
+    label: "Claims reserves",
+    owner: "Finance",
     status: "Review",
-    detail: "Two draft versions are waiting on rate filing validation."
+    detail: "Large-loss reserve deltas need sign-off before close."
   },
   {
-    label: "Underwriting handoff",
-    owner: "Operations",
+    label: "Settlement funding",
+    owner: "Treasury",
     status: "Queued",
-    detail: "Rules package is staged for intake mapping."
+    detail: "Three settlement packets are waiting for disbursement approval."
   }
 ];
 
-export function ProductConfigOverviewScreen() {
+export function FinanceDashboardScreen() {
   return (
     <div className="flex flex-col gap-4">
       <section className="grid gap-3 md:grid-cols-3">
-        <MetricCard label="Active products" value="4" trend="2 market-ready" />
-        <MetricCard label="Draft versions" value="2" trend="1 needs pricing" />
-        <MetricCard label="Markets" value="3" trend="TX, FL, CA" />
+        <MetricCard label="Premium posted" value="$3.2M" trend="Current cycle" />
+        <MetricCard label="Reserve movement" value="$820K" trend="Pending review" />
+        <MetricCard label="Open exceptions" value="9" trend="4 due today" />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.75fr)]">
         <Card>
           <CardHeader>
-            <CardTitle>Market Readiness</CardTitle>
+            <CardTitle>Cash Flow Status</CardTitle>
             <CardDescription>
-              Product filing progress by market and plan family.
+              Operational progress across the finance close lanes.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
-            {marketReadiness.map((item) => (
+            {cashFlow.map((item) => (
               <div key={item.label} className="grid gap-2 border border-border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <strong>{item.label}</strong>
@@ -66,7 +66,7 @@ export function ProductConfigOverviewScreen() {
                 </div>
                 <Progress value={item.progress} />
                 <p className="m-0 text-xs text-muted-foreground">
-                  {item.progress}% complete
+                  {item.progress}% processed
                 </p>
               </div>
             ))}
@@ -75,18 +75,18 @@ export function ProductConfigOverviewScreen() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Release Gate</CardTitle>
+            <CardTitle>Close Checkpoint</CardTitle>
             <CardDescription>
-              Next operational checkpoint before activation.
+              Finance item that needs attention before cycle close.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Alert>
               <Clock3Icon />
-              <AlertTitle>Pricing review due today</AlertTitle>
+              <AlertTitle>Reserve approval pending</AlertTitle>
               <AlertDescription>
-                Validate Florida PPO tables before the underwriting package is
-                promoted.
+                Finance needs approval on two claims reserve changes before
+                settlement funding can clear.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -94,7 +94,7 @@ export function ProductConfigOverviewScreen() {
       </section>
 
       <section className="grid gap-3 lg:grid-cols-3">
-        {configurationLanes.map((lane) => (
+        {financeLanes.map((lane) => (
           <Card key={lane.label}>
             <CardHeader>
               <CardTitle>{lane.label}</CardTitle>
@@ -129,7 +129,7 @@ function MetricCard({
         <CardAction>
           <Badge variant="outline">
             <CheckCircle2Icon data-icon="inline-start" />
-            Live
+            Ledger
           </Badge>
         </CardAction>
         <CardDescription>{trend}</CardDescription>
@@ -142,7 +142,7 @@ function MetricCard({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "Complete" || status === "Ready") {
+  if (status === "On track") {
     return <Badge>{status}</Badge>;
   }
 

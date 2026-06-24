@@ -1,35 +1,35 @@
 {
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "underwriting",
+  "name": "claims",
   "projectType": "application",
-  "sourceRoot": "apps/underwriting/src",
-  "tags": ["type:vertical", "scope:underwriting"],
+  "sourceRoot": "apps/claims/src",
+  "tags": ["type:vertical", "scope:claims"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{workspaceRoot}/dist/apps/underwriting"],
+      "outputs": ["{workspaceRoot}/dist/apps/claims"],
       "options": {
-        "cwd": "apps/underwriting",
+        "cwd": "apps/claims",
         "command": "rsbuild build"
       }
     },
     "serve": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "apps/underwriting",
+        "cwd": "apps/claims",
         "command": "rsbuild dev"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p apps/underwriting/tsconfig.json --noEmit"
+        "command": "tsc -p apps/claims/tsconfig.json --noEmit"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint \"apps/underwriting/**/*.{ts,tsx,js,jsx}\""
+        "command": "eslint \"apps/claims/**/*.{ts,tsx,js,jsx}\""
       }
     }
   }

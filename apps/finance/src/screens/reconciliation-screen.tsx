@@ -20,78 +20,78 @@ import {
 } from "@ginja/design-system";
 import { CheckCircle2Icon, FileTextIcon, SendIcon } from "lucide-react";
 
-const evidenceItems = [
-  { item: "Loss runs", owner: "Broker", status: "Complete" },
-  { item: "Census upload", owner: "Applicant", status: "Complete" },
-  { item: "Prior carrier notes", owner: "Underwriter", status: "Review" },
-  { item: "Pricing exception", owner: "Actuarial", status: "Open" }
+const reconciliationItems = [
+  { item: "Carrier premium feed", owner: "Billing", status: "Matched" },
+  { item: "Claims reserve ledger", owner: "Finance", status: "Review" },
+  { item: "Settlement disbursements", owner: "Treasury", status: "Open" },
+  { item: "Commission accruals", owner: "Finance", status: "Matched" }
 ];
 
-export function CaseReviewScreen() {
+export function ReconciliationScreen() {
   return (
     <div className="flex flex-col gap-4">
       <section className="grid gap-3 md:grid-cols-3">
-        <DecisionMetric label="Evidence status" value="Complete" detail="3 of 4 cleared" />
-        <DecisionMetric label="Risk tier" value="Standard" detail="No referral block" />
-        <DecisionMetric label="Next action" value="Pricing" detail="Rate exception review" />
+        <ReconciliationMetric label="Matched" value="91%" detail="Across feeds" />
+        <ReconciliationMetric label="Exceptions" value="9" detail="4 due today" />
+        <ReconciliationMetric label="Close readiness" value="74%" detail="Pending reserves" />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <Card>
           <CardHeader>
-            <CardTitle>Decision Readiness</CardTitle>
+            <CardTitle>Reconciliation Readiness</CardTitle>
             <CardDescription>
-              Current package health for the active case review.
+              Current close health for finance operations.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <Alert>
               <CheckCircle2Icon />
-              <AlertTitle>Standard risk path</AlertTitle>
+              <AlertTitle>Premium feed matched</AlertTitle>
               <AlertDescription>
-                Evidence is materially complete. Pricing review is the only
-                remaining checkpoint before bind recommendation.
+                Carrier premium records are matched. Reserve and settlement
+                exceptions remain before cycle close.
               </AlertDescription>
             </Alert>
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium">Decision package</span>
-                <span className="text-xs text-muted-foreground">86%</span>
+                <span className="text-sm font-medium">Close package</span>
+                <span className="text-xs text-muted-foreground">74%</span>
               </div>
-              <Progress value={86} />
+              <Progress value={74} />
             </div>
             <Button>
               <SendIcon data-icon="inline-start" />
-              Send to pricing
+              Send close packet
             </Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Evidence Checklist</CardTitle>
+            <CardTitle>Exception Checklist</CardTitle>
             <CardDescription>
-              Required artifacts and operational ownership.
+              Finance feeds and operational ownership.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Artifact</TableHead>
+                  <TableHead>Feed</TableHead>
                   <TableHead>Owner</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {evidenceItems.map((item) => (
+                {reconciliationItems.map((item) => (
                   <TableRow key={item.item}>
                     <TableCell>
                       <strong>{item.item}</strong>
                     </TableCell>
                     <TableCell>{item.owner}</TableCell>
                     <TableCell>
-                      <EvidenceBadge status={item.status} />
+                      <ReconciliationBadge status={item.status} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -104,7 +104,7 @@ export function CaseReviewScreen() {
   );
 }
 
-function DecisionMetric({
+function ReconciliationMetric({
   detail,
   label,
   value
@@ -120,7 +120,7 @@ function DecisionMetric({
         <CardAction>
           <Badge variant="outline">
             <FileTextIcon data-icon="inline-start" />
-            Review
+            Close
           </Badge>
         </CardAction>
         <CardDescription>{detail}</CardDescription>
@@ -132,8 +132,8 @@ function DecisionMetric({
   );
 }
 
-function EvidenceBadge({ status }: { status: string }) {
-  if (status === "Complete") {
+function ReconciliationBadge({ status }: { status: string }) {
+  if (status === "Matched") {
     return <Badge>{status}</Badge>;
   }
 

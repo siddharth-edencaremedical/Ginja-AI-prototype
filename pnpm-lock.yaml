@@ -68,7 +68,34 @@ importers:
         specifier: ^4.98.0
         version: 4.98.0(@cloudflare/workers-types@4.20260608.1)
 
-  apps/product-config:
+  apps/claims:
+    dependencies:
+      '@ginja/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@ginja/design-system':
+        specifier: workspace:*
+        version: link:../../packages/design-system
+      '@ginja/feature-flags':
+        specifier: workspace:*
+        version: link:../../packages/feature-flags
+      '@ginja/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      lucide-react:
+        specifier: ^1.17.0
+        version: 1.17.0(react@19.2.7)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.7(react@19.2.7)
+      react-router-dom:
+        specifier: ^7.9.0
+        version: 7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+
+  apps/finance:
     dependencies:
       '@ginja/auth':
         specifier: workspace:*
@@ -112,33 +139,6 @@ importers:
       '@ginja/permissions':
         specifier: workspace:*
         version: link:../../packages/permissions
-      '@ginja/shared-types':
-        specifier: workspace:*
-        version: link:../../packages/shared-types
-      lucide-react:
-        specifier: ^1.17.0
-        version: 1.17.0(react@19.2.7)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.7(react@19.2.7)
-      react-router-dom:
-        specifier: ^7.9.0
-        version: 7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-
-  apps/underwriting:
-    dependencies:
-      '@ginja/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@ginja/design-system':
-        specifier: workspace:*
-        version: link:../../packages/design-system
-      '@ginja/feature-flags':
-        specifier: workspace:*
-        version: link:../../packages/feature-flags
       '@ginja/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types

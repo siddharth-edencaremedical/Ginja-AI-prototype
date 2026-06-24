@@ -53,9 +53,9 @@ import {
 import { loadRemote, registerRemotes } from "@module-federation/runtime-tools";
 import {
   ArrowUpRightIcon,
-  BoxesIcon,
   ChevronDownIcon,
   ClipboardCheckIcon,
+  CircleDollarSignIcon,
   HomeIcon,
   LogOutIcon,
   RouteIcon
@@ -113,8 +113,8 @@ interface ShellNavigationItem {
 }
 
 const remoteIcons: Record<string, LucideIcon> = {
-  "product-config": BoxesIcon,
-  underwriting: ClipboardCheckIcon
+  claims: ClipboardCheckIcon,
+  finance: CircleDollarSignIcon
 };
 
 const registeredRemotes = new Set<string>();
@@ -473,7 +473,17 @@ function useRemoteManifests(
 
 async function loadRuntimeRemoteRegistry(): Promise<RemoteRegistryItem[]> {
   try {
-    return await fetchRuntimeRemoteRegistry();
+    const runtimeRegistry = await fetchRuntimeRemoteRegistry();
+
+    if (runtimeRegistry.length > 0 || !isLocalDevelopmentHost()) {
+      return runtimeRegistry;
+    }
+
+    logger.warn("Using local development remote registry fallback", {
+      error: "Platform module registry returned no known modules."
+    });
+
+    return getLocalDevelopmentRemoteRegistry();
   } catch (error) {
     if (isLocalDevelopmentHost()) {
       logger.warn("Using local development remote registry fallback", {
@@ -502,12 +512,6 @@ function getRemoteRegistryCompatibilityError(
   registration: RemoteRegistryItem,
   knownRegistration?: KnownRemoteRegistration
 ): Error | undefined {
-  if (!isSupportedRemoteContractVersion(registration.contractVersion)) {
-    return new Error(
-      `Remote "${registration.id}" registry contract version ${registration.contractVersion} is not supported.`
-    );
-  }
-
   if (!knownRegistration) {
     return undefined;
   }
@@ -614,9 +618,6 @@ function createRemoteStates(
   const runtimeRegistryById = new Map(
     runtimeRegistry.map((registration) => [registration.id, registration])
   );
-  const knownRemoteIds = new Set(
-    knownRemoteRegistrations.map((registration) => registration.id)
-  );
   const knownRemoteStates = knownRemoteRegistrations.map<RemoteRuntimeState>(
     (knownRegistration) => {
       if (!canLoadRemote(knownRegistration, subject, flags)) {
@@ -654,33 +655,7 @@ function createRemoteStates(
       };
     }
   );
-  const additionalRuntimeStates = runtimeRegistry
-    .filter((registration) => !knownRemoteIds.has(registration.id))
-    .map<RemoteRuntimeState>((registration) => {
-      if (!canLoadRemote(registration, subject, flags)) {
-        return {
-          registration,
-          status: "blocked"
-        };
-      }
-
-      const compatibilityError = getRemoteRegistryCompatibilityError(registration);
-
-      if (compatibilityError) {
-        return {
-          registration,
-          status: "failed",
-          error: compatibilityError
-        };
-      }
-
-      return {
-        registration,
-        status: "loading"
-      };
-    });
-
-  return [...knownRemoteStates, ...additionalRuntimeStates];
+  return knownRemoteStates;
 }
 
 function createFailedRemoteStates(
@@ -727,15 +702,15 @@ function Home({ navigation }: { navigation: ShellNavigationItem[] }) {
           Today&apos;s work
         </h2>
         <p className="m-0 max-w-3xl text-sm text-muted-foreground">
-          A focused view of product setup, underwriting intake, and decision
+          A focused view of claims operations, finance exceptions, and settlement
           readiness.
         </p>
       </section>
 
       <section className="grid gap-3 md:grid-cols-3">
-        <MetricCard label="Open cases" value="12" description="4 need triage" />
-        <MetricCard label="Draft products" value="2" description="1 pricing review" />
-        <MetricCard label="Evidence ready" value="74%" description="Across active files" />
+        <MetricCard label="Open claims" value="18" description="5 high priority" />
+        <MetricCard label="Finance exceptions" value="9" description="4 due today" />
+        <MetricCard label="Settlement ready" value="74%" description="Across active files" />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)]">
@@ -743,7 +718,7 @@ function Home({ navigation }: { navigation: ShellNavigationItem[] }) {
           <div>
             <h3 className="m-0 text-base font-semibold">Work Areas</h3>
             <p className="m-0 mt-1 text-sm text-muted-foreground">
-              Open the operational workspaces for daily product and case work.
+              Open the operational workspaces for claims and finance work.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
@@ -797,18 +772,18 @@ function Home({ navigation }: { navigation: ShellNavigationItem[] }) {
           </CardHeader>
           <CardContent className="grid gap-3">
             <PriorityItem
-              label="Florida PPO pricing"
-              detail="Rate table review before product activation"
+              label="Reserve review"
+              detail="Large-loss file awaiting finance approval"
               status="Today"
             />
             <PriorityItem
               label="Northstar Foods"
-              detail="High-priority underwriting file"
+              detail="High-priority claims file"
               status="High"
             />
             <PriorityItem
-              label="California EPO filing"
-              detail="Compliance review pending"
+              label="Settlement funding"
+              detail="Three packets pending treasury approval"
               status="Review"
             />
           </CardContent>
@@ -1047,12 +1022,12 @@ function isPathWithinBase(pathname: string, basePath: string): boolean {
 }
 
 function getWorkAreaDescription(path: string): string {
-  if (path.startsWith("/product-config")) {
-    return "Maintain products, markets, and release readiness.";
+  if (path.startsWith("/claims")) {
+    return "Review claims, reserves, and settlement readiness.";
   }
 
-  if (path.startsWith("/underwriting")) {
-    return "Review intake, evidence, and case decisions.";
+  if (path.startsWith("/finance")) {
+    return "Monitor ledger close, funding, and reconciliation exceptions.";
   }
 
   return "Open this workspace area.";

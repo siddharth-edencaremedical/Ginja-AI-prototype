@@ -17,64 +17,70 @@ import {
 } from "@ginja/design-system";
 import { ArrowUpRightIcon, FileCheck2Icon } from "lucide-react";
 
-const products = [
+const claims = [
   {
-    name: "Care Advantage HMO",
-    state: "Active",
-    market: "Texas",
-    owner: "Priya Product",
-    readiness: 94,
-    version: "2026.4"
+    claim: "CLM-10482",
+    claimant: "Northstar Foods",
+    lane: "High severity",
+    owner: "Maya Claims",
+    readiness: 82,
+    reserve: "$420K",
+    status: "Review"
   },
   {
-    name: "Eden Select PPO",
-    state: "Draft",
-    market: "Florida",
-    owner: "Rate desk",
-    readiness: 72,
-    version: "2026.2"
+    claim: "CLM-10467",
+    claimant: "Harbor Clinics",
+    lane: "Fast-track",
+    owner: "Jules Carter",
+    readiness: 96,
+    reserve: "$38K",
+    status: "Ready"
   },
   {
-    name: "Ginja AI Value Plan",
-    state: "Review",
-    market: "California",
-    owner: "Compliance",
-    readiness: 58,
-    version: "2026.1"
+    claim: "CLM-10441",
+    claimant: "Atlas Logistics",
+    lane: "Standard",
+    owner: "Coverage desk",
+    readiness: 68,
+    reserve: "$165K",
+    status: "Open"
   },
   {
-    name: "Eden Complete EPO",
-    state: "Active",
-    market: "Texas",
-    owner: "Network",
-    readiness: 88,
-    version: "2026.3"
+    claim: "CLM-10398",
+    claimant: "Summit Home Care",
+    lane: "Settlement",
+    owner: "Maya Claims",
+    readiness: 89,
+    reserve: "$74K",
+    status: "Offer"
   }
 ];
 
-export function ProductCatalogScreen() {
+export function ClaimsWorkbenchScreen() {
   return (
     <div className="flex flex-col gap-4">
       <section className="grid gap-3 md:grid-cols-3">
-        <SummaryCard label="Products" value="4" detail="2 active lines" />
-        <SummaryCard label="Filed markets" value="3" detail="1 in review" />
-        <SummaryCard label="Average readiness" value="78%" detail="Across catalog" />
+        <SummaryCard label="Assigned files" value="18" detail="7 due this week" />
+        <SummaryCard label="Settlement ready" value="3" detail="Offer packet staged" />
+        <SummaryCard label="Coverage holds" value="2" detail="Need policy review" />
       </section>
 
       <Card>
         <CardHeader>
-          <CardTitle>Product Catalog</CardTitle>
+          <CardTitle>Claims Workbench</CardTitle>
           <CardDescription>
-            Operational product list with market ownership and release readiness.
+            Active files with handling lane, reserve exposure, and review
+            readiness.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Market</TableHead>
-                <TableHead>Version</TableHead>
+                <TableHead>Claim</TableHead>
+                <TableHead>Claimant</TableHead>
+                <TableHead>Lane</TableHead>
+                <TableHead>Reserve</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Readiness</TableHead>
@@ -82,22 +88,23 @@ export function ProductCatalogScreen() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.name}>
+              {claims.map((claim) => (
+                <TableRow key={claim.claim}>
                   <TableCell>
-                    <strong>{product.name}</strong>
+                    <strong>{claim.claim}</strong>
                   </TableCell>
-                  <TableCell>{product.market}</TableCell>
-                  <TableCell>{product.version}</TableCell>
-                  <TableCell>{product.owner}</TableCell>
+                  <TableCell>{claim.claimant}</TableCell>
+                  <TableCell>{claim.lane}</TableCell>
+                  <TableCell>{claim.reserve}</TableCell>
+                  <TableCell>{claim.owner}</TableCell>
                   <TableCell>
-                    <ProductStatusBadge status={product.state} />
+                    <ClaimStatusBadge status={claim.status} />
                   </TableCell>
                   <TableCell>
                     <div className="grid min-w-28 gap-1">
-                      <Progress value={product.readiness} />
+                      <Progress value={claim.readiness} />
                       <span className="text-xs text-muted-foreground">
-                        {product.readiness}%
+                        {claim.readiness}%
                       </span>
                     </div>
                   </TableCell>
@@ -133,7 +140,7 @@ function SummaryCard({
         <CardAction>
           <Badge variant="outline">
             <FileCheck2Icon data-icon="inline-start" />
-            Catalog
+            Claims
           </Badge>
         </CardAction>
         <CardDescription>{detail}</CardDescription>
@@ -145,8 +152,8 @@ function SummaryCard({
   );
 }
 
-function ProductStatusBadge({ status }: { status: string }) {
-  if (status === "Active") {
+function ClaimStatusBadge({ status }: { status: string }) {
+  if (status === "Ready" || status === "Offer") {
     return <Badge>{status}</Badge>;
   }
 
