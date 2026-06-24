@@ -190,10 +190,12 @@ GET /api/v1/platform/shell/modules
 The Worker proxies that request to the platform service and sends
 `Authorization: Bearer <PLATFORM_SERVICE_TOKEN>` from its Cloudflare environment.
 The browser never receives that token. The shell maps the returned
-`ShellModuleResponse[]` records to its local known remote metadata by `moduleId`,
-then registers only known, permitted modules with Module Federation. Unknown
-platform modules are ignored until they have explicit shell routing and
-permission metadata. On localhost, if the Worker proxy is not available,
+`ShellModuleResponse[]` records to its local known remote metadata by
+`module_id`, falling back to stable platform `code` / release metadata when an
+explicit module id was not baked into the shell build. It then registers only
+known, permitted modules with Module Federation. Unknown platform modules are
+ignored until they have explicit shell routing and permission metadata. On
+localhost, if the Worker proxy is not available,
 `apps/shell/src/remote-registry.ts` returns a development fallback registry with
 the current dev remote URLs.
 
@@ -346,13 +348,17 @@ Build and deploy the shell Worker with Workers Static Assets:
 ```bash
 PLATFORM_SERVICE_TOKEN=<token> \
 PLATFORM_SERVICE_BASE_URL=https://ginja-ai-internal-platform-service.onrender.com \
+CLAIMS_MODULE_ID=<claims-module-id> \
+FINANCE_MODULE_ID=<finance-module-id> \
 pnpm cf:deploy:shell
 ```
 
 The deploy helper stores `PLATFORM_SERVICE_TOKEN`, and
 `PLATFORM_SERVICE_BASE_URL` when provided, as Cloudflare Worker secrets after
 deployment. The shell Worker uses those bindings when proxying
-`GET /api/v1/platform/shell/modules` to the platform service.
+`GET /api/v1/platform/shell/modules` to the platform service. The module id
+values are build-time shell configuration and must be present when building or
+deploying the shell, not only when publishing remote releases.
 
 Publish vertical release artifacts through the platform service:
 

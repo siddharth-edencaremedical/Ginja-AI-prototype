@@ -11,18 +11,18 @@ export interface PlatformApiEnvelope<T> {
 }
 
 export interface ShellModuleResponse {
-  moduleId: string;
+  module_id: string;
   code: string;
   name: string;
   description: string | null;
   icon: string | null;
   url: string | null;
-  ownerTeam: string | null;
+  owner_team: string | null;
   version: string;
-  entryAssetUrl: string;
-  assetBaseUrl: string;
-  metadata: Record<string, unknown>;
-  activeRelease: Record<string, unknown> | null;
+  entry_asset_url: string | null;
+  asset_base_url: string | null;
+  metadata: Record<string, unknown> | null;
+  active_release: Record<string, unknown> | null;
 }
 
 export interface RemoteModuleManifest {

@@ -90,7 +90,7 @@ type RemoteRuntimeState =
       status: "blocked";
     }
   | {
-      registration: KnownRemoteRegistration;
+      registration: RemoteRegistration;
       status: "loading";
     }
   | {
@@ -99,10 +99,17 @@ type RemoteRuntimeState =
       manifest: RemoteModuleManifest;
     }
   | {
-      registration: KnownRemoteRegistration;
+      registration: RemoteRegistration;
       status: "failed";
       error: unknown;
     };
+
+type RemoteRegistration = KnownRemoteRegistration | RemoteRegistryItem;
+
+interface RemoteAccessPolicy {
+  requiredPermissions: string[];
+  featureFlags?: string[];
+}
 
 interface ShellNavigationItem {
   icon: LucideIcon;
@@ -498,7 +505,7 @@ async function loadRuntimeRemoteRegistry(): Promise<RemoteRegistryItem[]> {
 }
 
 function canLoadRemote(
-  registration: KnownRemoteRegistration,
+  registration: RemoteAccessPolicy,
   subject: PermissionSubject,
   flags: FeatureFlagState
 ): boolean {

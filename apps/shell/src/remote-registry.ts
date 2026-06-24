@@ -7,6 +7,7 @@ import type {
 export interface KnownRemoteRegistration {
   id: string;
   moduleId: string;
+  platformCode: string;
   displayName: string;
   routeBasePath: `/${string}`;
   scopeClassName: string;
@@ -20,6 +21,7 @@ const shellModulesPath = "/api/v1/platform/shell/modules";
 const claimsRegistration: KnownRemoteRegistration = {
   id: "claims",
   moduleId: normalizeConfiguredValue(__CLAIMS_MODULE_ID__, "claims"),
+  platformCode: "CLAIMS",
   displayName: "Claims",
   routeBasePath: "/claims",
   scopeClassName: "claims-remote",
@@ -30,6 +32,7 @@ const claimsRegistration: KnownRemoteRegistration = {
 const financeRegistration: KnownRemoteRegistration = {
   id: "finance",
   moduleId: normalizeConfiguredValue(__FINANCE_MODULE_ID__, "finance"),
+  platformCode: "FINANCE",
   displayName: "Finance",
   routeBasePath: "/finance",
   scopeClassName: "finance-remote",
@@ -100,29 +103,73 @@ function toRemoteRegistryItems(
       registration
     ])
   );
+  const knownRemoteByPlatformCode = new Map(
+    knownRemoteRegistrations.map((registration) => [
+      normalizePlatformCode(registration.platformCode),
+      registration
+    ])
+  );
+  const knownRemoteById = new Map(
+    knownRemoteRegistrations.map((registration) => [
+      registration.id,
+      registration
+    ])
+  );
 
   return modules.flatMap((module) => {
-    const knownRegistration = knownRemoteByModuleId.get(module.moduleId);
+    const moduleId = normalizeOptionalValue(module.module_id);
+    const remoteEntryUrl = normalizeOptionalValue(module.entry_asset_url);
+    const assetBaseUrl = normalizeOptionalValue(module.asset_base_url);
+    const knownRegistration =
+      (moduleId ? knownRemoteByModuleId.get(moduleId) : undefined) ??
+      knownRemoteByPlatformCode.get(normalizePlatformCode(module.code)) ??
+      getKnownRemoteFromMetadata(module.metadata, knownRemoteById);
 
-    if (!knownRegistration || !module.entryAssetUrl) {
+    if (!knownRegistration || !moduleId || !remoteEntryUrl) {
       return [];
     }
 
     return [
       {
         ...knownRegistration,
+        moduleId,
         code: module.code,
         displayName: module.name || knownRegistration.displayName,
-        remoteEntryUrl: module.entryAssetUrl,
+        remoteEntryUrl,
         version: module.version,
-        assetBaseUrl: module.assetBaseUrl
+        assetBaseUrl
       }
     ];
   });
+}
+
+function getKnownRemoteFromMetadata(
+  metadata: Record<string, unknown> | null | undefined,
+  knownRemoteById: Map<string, KnownRemoteRegistration>
+): KnownRemoteRegistration | undefined {
+  const remoteId = metadata?.remoteId;
+
+  if (typeof remoteId !== "string") {
+    return undefined;
+  }
+
+  return knownRemoteById.get(remoteId.trim());
 }
 
 function normalizeConfiguredValue(value: string, fallback: string): string {
   const normalized = value.trim();
 
   return normalized.length > 0 ? normalized : fallback;
+}
+
+function normalizeOptionalValue(
+  value: string | null | undefined
+): string | undefined {
+  const normalized = value?.trim();
+
+  return normalized ? normalized : undefined;
+}
+
+function normalizePlatformCode(value: string): string {
+  return value.trim().toUpperCase();
 }
