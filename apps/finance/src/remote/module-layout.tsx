@@ -6,7 +6,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@ginja/design-system";
-import { CircleDollarSignIcon } from "lucide-react";
+import { CircleDollarSignIcon, ShieldCheckIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const routeBasePath = "/finance";
@@ -28,12 +28,16 @@ export function FinanceModuleLayout() {
         <div className="max-w-3xl">
           <div className="mb-2.5 flex flex-wrap items-center gap-2">
             <Badge variant="secondary">Finance operations</Badge>
+            <Badge>
+              <ShieldCheckIcon data-icon="inline-start" />
+              Rollback test release
+            </Badge>
             <Badge variant="outline">$4.8M in-cycle</Badge>
           </div>
           <h2 className="m-0 text-2xl font-semibold tracking-tight">Finance</h2>
           <p className="m-0 mt-2 text-sm text-muted-foreground">
             Monitor premium flow, claims reserves, settlement funding, and
-            reconciliation exceptions across the operating ledger.
+            reconciliation exceptions with the updated close-control view.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

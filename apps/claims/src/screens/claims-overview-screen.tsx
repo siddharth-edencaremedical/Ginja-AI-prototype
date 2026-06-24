@@ -19,6 +19,21 @@ const severityMix = [
   { label: "Fast-track", progress: 18, status: "Ready" }
 ];
 
+const prioritySignals = [
+  {
+    label: "Priority board",
+    value: "4 files",
+    status: "Pinned",
+    detail: "Supervisor reviews now stay surfaced ahead of standard handling."
+  },
+  {
+    label: "Reserve watch",
+    value: "$620K",
+    status: "Review",
+    detail: "High-exposure adjustments are grouped for finance confirmation."
+  }
+];
+
 const operatingLanes = [
   {
     label: "Coverage review",
@@ -44,9 +59,26 @@ export function ClaimsOverviewScreen() {
   return (
     <div className="flex flex-col gap-4">
       <section className="grid gap-3 md:grid-cols-3">
-        <MetricCard label="Open claims" value="18" trend="5 high priority" />
+        <MetricCard label="Open claims" value="18" trend="4 priority reviews" />
         <MetricCard label="Avg cycle time" value="6.2d" trend="Down 0.8d" />
         <MetricCard label="Reserve exposure" value="$1.8M" trend="Across open files" />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        {prioritySignals.map((signal) => (
+          <Card key={signal.label}>
+            <CardHeader>
+              <CardTitle>{signal.label}</CardTitle>
+              <CardAction>
+                <StatusBadge status={signal.status} />
+              </CardAction>
+              <CardDescription>{signal.value}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="m-0 text-sm text-muted-foreground">{signal.detail}</p>
+            </CardContent>
+          </Card>
+        ))}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.75fr)]">
@@ -142,7 +174,7 @@ function MetricCard({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "On track" || status === "Ready") {
+  if (status === "On track" || status === "Ready" || status === "Pinned") {
     return <Badge>{status}</Badge>;
   }
 

@@ -21,10 +21,30 @@ import {
 import { CheckCircle2Icon, FileTextIcon, SendIcon } from "lucide-react";
 
 const reconciliationItems = [
-  { item: "Carrier premium feed", owner: "Billing", status: "Matched" },
-  { item: "Claims reserve ledger", owner: "Finance", status: "Review" },
-  { item: "Settlement disbursements", owner: "Treasury", status: "Open" },
-  { item: "Commission accruals", owner: "Finance", status: "Matched" }
+  {
+    item: "Carrier premium feed",
+    owner: "Billing",
+    status: "Matched",
+    nextAction: "Archive matched batch"
+  },
+  {
+    item: "Claims reserve ledger",
+    owner: "Finance",
+    status: "Review",
+    nextAction: "Confirm reserve deltas"
+  },
+  {
+    item: "Settlement disbursements",
+    owner: "Treasury",
+    status: "Open",
+    nextAction: "Approve funding queue"
+  },
+  {
+    item: "Commission accruals",
+    owner: "Finance",
+    status: "Matched",
+    nextAction: "Send close evidence"
+  }
 ];
 
 export function ReconciliationScreen() {
@@ -33,7 +53,7 @@ export function ReconciliationScreen() {
       <section className="grid gap-3 md:grid-cols-3">
         <ReconciliationMetric label="Matched" value="91%" detail="Across feeds" />
         <ReconciliationMetric label="Exceptions" value="9" detail="4 due today" />
-        <ReconciliationMetric label="Close readiness" value="74%" detail="Pending reserves" />
+        <ReconciliationMetric label="Close controls" value="5" detail="Pinned tasks" />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
@@ -81,6 +101,7 @@ export function ReconciliationScreen() {
                   <TableHead>Feed</TableHead>
                   <TableHead>Owner</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Next action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -93,6 +114,7 @@ export function ReconciliationScreen() {
                     <TableCell>
                       <ReconciliationBadge status={item.status} />
                     </TableCell>
+                    <TableCell>{item.nextAction}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

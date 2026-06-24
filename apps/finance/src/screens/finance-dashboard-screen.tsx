@@ -19,6 +19,21 @@ const cashFlow = [
   { label: "Reserve adjustments", progress: 42, status: "Queued" }
 ];
 
+const closeSignals = [
+  {
+    label: "Close-control board",
+    value: "5 tasks",
+    status: "Pinned",
+    detail: "Treasury approvals and reserve reviews are grouped for daily close."
+  },
+  {
+    label: "Funding watch",
+    value: "$310K",
+    status: "Review",
+    detail: "Settlement disbursements now surface before ledger exceptions."
+  }
+];
+
 const financeLanes = [
   {
     label: "Premium posting",
@@ -45,8 +60,25 @@ export function FinanceDashboardScreen() {
     <div className="flex flex-col gap-4">
       <section className="grid gap-3 md:grid-cols-3">
         <MetricCard label="Premium posted" value="$3.2M" trend="Current cycle" />
-        <MetricCard label="Reserve movement" value="$820K" trend="Pending review" />
+        <MetricCard label="Reserve movement" value="$820K" trend="5 close-control tasks" />
         <MetricCard label="Open exceptions" value="9" trend="4 due today" />
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        {closeSignals.map((signal) => (
+          <Card key={signal.label}>
+            <CardHeader>
+              <CardTitle>{signal.label}</CardTitle>
+              <CardAction>
+                <StatusBadge status={signal.status} />
+              </CardAction>
+              <CardDescription>{signal.value}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="m-0 text-sm text-muted-foreground">{signal.detail}</p>
+            </CardContent>
+          </Card>
+        ))}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.75fr)]">
@@ -142,7 +174,7 @@ function MetricCard({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "On track") {
+  if (status === "On track" || status === "Pinned") {
     return <Badge>{status}</Badge>;
   }
 

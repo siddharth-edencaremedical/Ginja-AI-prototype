@@ -25,7 +25,8 @@ const claims = [
     owner: "Maya Claims",
     readiness: 82,
     reserve: "$420K",
-    status: "Review"
+    status: "Review",
+    nextAction: "Supervisor reserve sign-off"
   },
   {
     claim: "CLM-10467",
@@ -34,7 +35,8 @@ const claims = [
     owner: "Jules Carter",
     readiness: 96,
     reserve: "$38K",
-    status: "Ready"
+    status: "Ready",
+    nextAction: "Send settlement packet"
   },
   {
     claim: "CLM-10441",
@@ -43,7 +45,8 @@ const claims = [
     owner: "Coverage desk",
     readiness: 68,
     reserve: "$165K",
-    status: "Open"
+    status: "Open",
+    nextAction: "Coverage confirmation"
   },
   {
     claim: "CLM-10398",
@@ -52,7 +55,8 @@ const claims = [
     owner: "Maya Claims",
     readiness: 89,
     reserve: "$74K",
-    status: "Offer"
+    status: "Offer",
+    nextAction: "Final offer approval"
   }
 ];
 
@@ -60,7 +64,7 @@ export function ClaimsWorkbenchScreen() {
   return (
     <div className="flex flex-col gap-4">
       <section className="grid gap-3 md:grid-cols-3">
-        <SummaryCard label="Assigned files" value="18" detail="7 due this week" />
+        <SummaryCard label="Priority files" value="4" detail="Pinned for review" />
         <SummaryCard label="Settlement ready" value="3" detail="Offer packet staged" />
         <SummaryCard label="Coverage holds" value="2" detail="Need policy review" />
       </section>
@@ -83,6 +87,7 @@ export function ClaimsWorkbenchScreen() {
                 <TableHead>Reserve</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Next action</TableHead>
                 <TableHead>Readiness</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
@@ -100,6 +105,7 @@ export function ClaimsWorkbenchScreen() {
                   <TableCell>
                     <ClaimStatusBadge status={claim.status} />
                   </TableCell>
+                  <TableCell>{claim.nextAction}</TableCell>
                   <TableCell>
                     <div className="grid min-w-28 gap-1">
                       <Progress value={claim.readiness} />
