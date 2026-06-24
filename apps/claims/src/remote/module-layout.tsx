@@ -30,7 +30,7 @@ export function ClaimsModuleLayout() {
             <Badge variant="secondary">Claims operations</Badge>
             <Badge>
               <ShieldCheckIcon data-icon="inline-start" />
-              Rollback test release
+              Rollback test release 2
             </Badge>
             <Badge variant="outline">18 active files</Badge>
           </div>

@@ -30,7 +30,7 @@ export function FinanceModuleLayout() {
             <Badge variant="secondary">Finance operations</Badge>
             <Badge>
               <ShieldCheckIcon data-icon="inline-start" />
-              Rollback test release
+              Rollback test release 2
             </Badge>
             <Badge variant="outline">$4.8M in-cycle</Badge>
           </div>
