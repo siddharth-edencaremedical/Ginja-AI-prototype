@@ -28,6 +28,7 @@ syncWorkerSecret("PLATFORM_SERVICE_TOKEN", process.env.PLATFORM_SERVICE_TOKEN, {
   required: true
 });
 syncWorkerSecret("PLATFORM_SERVICE_BASE_URL", process.env.PLATFORM_SERVICE_BASE_URL);
+syncWorkerSecret("REMOTE_ASSET_HOSTS", process.env.REMOTE_ASSET_HOSTS);
 
 function syncWorkerSecret(name, value, options = {}) {
   const trimmedValue = value?.trim();

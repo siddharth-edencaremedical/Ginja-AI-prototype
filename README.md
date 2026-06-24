@@ -283,6 +283,8 @@ Shell build configuration:
 - `PLATFORM_SERVICE_BASE_URL` defaults to `https://ginja-ai-internal-platform-service.onrender.com`.
 - `CLAIMS_MODULE_ID` maps the Claims vertical to a platform module record.
 - `FINANCE_MODULE_ID` maps the Finance vertical to a platform module record.
+- `REMOTE_ASSET_HOSTS` optionally configures comma-separated remote asset hosts
+  the shell Worker may proxy. It defaults to the current public R2 host.
 
 Remote builds use an automatic asset prefix so follow-up chunks, CSS, fonts, and
 images load relative to the served `remoteEntry.js`. Remote builds also accept

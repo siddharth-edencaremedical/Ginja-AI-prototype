@@ -2,12 +2,14 @@ interface Env {
   ASSETS: Fetcher;
   PLATFORM_SERVICE_BASE_URL?: string;
   PLATFORM_SERVICE_TOKEN?: string;
+  REMOTE_ASSET_HOSTS?: string;
 }
 
 const shellModulesPath = "/api/v1/platform/shell/modules";
 const shellRemoteAssetsPathPrefix = "/api/v1/platform/shell/remote-assets/";
 const defaultPlatformServiceBaseUrl =
   "https://ginja-ai-internal-platform-service.onrender.com";
+const defaultRemoteAssetHosts = ["pub-f35ff9bec2444061aa85868ea31d7776.r2.dev"];
 
 export default {
   async fetch(request, env) {
@@ -18,7 +20,7 @@ export default {
     }
 
     if (url.pathname.startsWith(shellRemoteAssetsPathPrefix)) {
-      return proxyRemoteAsset(request, url);
+      return proxyRemoteAsset(request, url, env);
     }
 
     return env.ASSETS.fetch(request);
@@ -67,7 +69,8 @@ async function proxyShellModules(request: Request, env: Env): Promise<Response> 
 
 async function proxyRemoteAsset(
   request: Request,
-  url: URL
+  url: URL,
+  env: Env
 ): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return new Response("Method Not Allowed", {
@@ -78,7 +81,7 @@ async function proxyRemoteAsset(
     });
   }
 
-  const remoteAssetRequest = parseRemoteAssetRequest(url);
+  const remoteAssetRequest = parseRemoteAssetRequest(url, env);
 
   if (!remoteAssetRequest) {
     return new Response("Not Found", { status: 404 });
@@ -110,7 +113,8 @@ async function proxyRemoteAsset(
 }
 
 function parseRemoteAssetRequest(
-  url: URL
+  url: URL,
+  env: Env
 ): { assetBaseUrl: string; assetPath: string } | null {
   const path = url.pathname.slice(shellRemoteAssetsPathPrefix.length);
   const separatorIndex = path.indexOf("/");
@@ -134,10 +138,26 @@ function parseRemoteAssetRequest(
       return null;
     }
 
+    if (!getAllowedRemoteAssetHosts(env).has(parsedAssetBaseUrl.hostname)) {
+      return null;
+    }
+
     return { assetBaseUrl, assetPath };
   } catch {
     return null;
   }
+}
+
+function getAllowedRemoteAssetHosts(env: Env): Set<string> {
+  const configuredHosts = env.REMOTE_ASSET_HOSTS?.split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+
+  return new Set(
+    configuredHosts && configuredHosts.length > 0
+      ? configuredHosts
+      : defaultRemoteAssetHosts
+  );
 }
 
 function hasUnsafePathSegment(pathname: string): boolean {
