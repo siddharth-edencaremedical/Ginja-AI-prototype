@@ -297,11 +297,11 @@ async function uploadRelease({
     )}/releases`,
     baseUrl
   );
-  url.searchParams.set("major_version", String(majorVersion));
-  url.searchParams.set("minor_version", String(minorVersion));
-  url.searchParams.set("metadata", JSON.stringify(metadata));
 
   const formData = new FormData();
+  formData.append("major_version", String(majorVersion));
+  formData.append("minor_version", String(minorVersion));
+  formData.append("metadata", JSON.stringify(metadata));
   formData.append(
     "entry_file",
     new Blob([readFileSync(entryFile)]),
