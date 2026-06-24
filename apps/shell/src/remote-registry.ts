@@ -17,6 +17,7 @@ export interface KnownRemoteRegistration {
 }
 
 const shellModulesPath = "/api/v1/platform/shell/modules";
+const shellRemoteAssetsPath = "/api/v1/platform/shell/remote-assets";
 
 const claimsRegistration: KnownRemoteRegistration = {
   id: "claims",
@@ -135,7 +136,8 @@ function toRemoteRegistryItems(
         moduleId,
         code: module.code,
         displayName: module.name || knownRegistration.displayName,
-        remoteEntryUrl,
+        remoteEntryUrl:
+          createShellRemoteAssetUrl(assetBaseUrl) ?? remoteEntryUrl,
         version: module.version,
         assetBaseUrl
       }
@@ -172,4 +174,14 @@ function normalizeOptionalValue(
 
 function normalizePlatformCode(value: string): string {
   return value.trim().toUpperCase();
+}
+
+function createShellRemoteAssetUrl(
+  assetBaseUrl: string | undefined
+): string | undefined {
+  if (!assetBaseUrl) {
+    return undefined;
+  }
+
+  return `${shellRemoteAssetsPath}/${encodeURIComponent(assetBaseUrl)}/remoteEntry.js`;
 }

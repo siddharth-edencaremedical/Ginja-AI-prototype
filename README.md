@@ -193,9 +193,13 @@ The browser never receives that token. The shell maps the returned
 `ShellModuleResponse[]` records to its local known remote metadata by
 `module_id`, falling back to stable platform `code` / release metadata when an
 explicit module id was not baked into the shell build. It then registers only
-known, permitted modules with Module Federation. Unknown platform modules are
-ignored until they have explicit shell routing and permission metadata. On
-localhost, if the Worker proxy is not available,
+known, permitted modules with Module Federation. For platform-hosted releases,
+the shell registers a same-origin Worker asset URL; the Worker proxies
+`remoteEntry.js` and follow-up chunks to the platform asset base so
+Rsbuild/Rspack's automatic public path can resolve chunks from the same logical
+directory as the entry script. Unknown platform modules are ignored until they
+have explicit shell routing and permission metadata. On localhost, if the Worker
+proxy is not available,
 `apps/shell/src/remote-registry.ts` returns a development fallback registry with
 the current dev remote URLs.
 
